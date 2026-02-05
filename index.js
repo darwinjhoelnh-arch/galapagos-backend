@@ -6,6 +6,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.send("OK");
+});
+
 app.post("/claim", (req, res) => {
   const { qr_id, wallet } = req.body;
 
