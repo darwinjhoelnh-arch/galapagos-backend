@@ -1,15 +1,18 @@
 import express from "express";
 import fs from "fs";
 import cors from "cors";
+import http from "http";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+// RUTA ROOT (health check)
 app.get("/", (req, res) => {
-  res.send("OK");
+  res.status(200).send("OK");
 });
 
+// ENDPOINT QR
 app.post("/claim", (req, res) => {
   const { qr_id, wallet } = req.body;
 
@@ -36,6 +39,12 @@ app.post("/claim", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, "0.0.0.0", () => {
+// 🔥 SERVIDOR HTTP EXPLÍCITO (CLAVE PARA RAILWAY)
+const server = http.createServer(app);
+server.listen(PORT, "0.0.0.0", () => {
   console.log("Backend corriendo en puerto " + PORT);
 });
+
+// Evita cierre prematuro
+server.keepAliveTimeout = 120000;
+server.headersTimeout = 120000;
