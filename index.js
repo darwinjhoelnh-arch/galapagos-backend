@@ -15,6 +15,22 @@ app.get("/", (req, res) => {
 });
 
 /* ===============================
+   REDIRECT PARA QR FÍSICO
+   /r/:id  → Phantom deep link
+================================ */
+app.get("/r/:id", (req, res) => {
+  const { id } = req.params;
+
+  const phantomDeepLink =
+    "https://phantom.app/ul/browse/" +
+    encodeURIComponent(
+      `https://galapagos-backend.onrender.com/claim/${id}`
+    );
+
+  res.redirect(302, phantomDeepLink);
+});
+
+/* ===============================
    ENDPOINT NUEVO
    QR → Phantom → Backend
    GET /claim/:id
