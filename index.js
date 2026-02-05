@@ -37,7 +37,7 @@ app.post("/claim", (req, res) => {
   });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 
 // 🔥 SERVIDOR HTTP EXPLÍCITO (CLAVE PARA RAILWAY)
 const server = http.createServer(app);
