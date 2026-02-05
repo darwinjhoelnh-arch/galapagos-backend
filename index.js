@@ -3,246 +3,178 @@ import fs from "fs";
 import cors from "cors";
 import http from "http";
 
+import {
+  Connection,
+  PublicKey,
+  Keypair,
+  Transaction,
+} from "@solana/web3.js";
+
+import {
+  getAssociatedTokenAddress,
+  createAssociatedTokenAccountInstruction,
+  createTransferInstruction,
+} from "@solana/spl-token";
+
+import bs58 from "bs58";
+
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 /* ===============================
+   CONFIG SOLANA
+================================ */
+const connection = new Connection(
+  "https://api.mainnet-beta.solana.com",
+  "confirmed"
+);
+
+const TREASURY_PRIVATE_KEY = process.env.TREASURY_PRIVATE_KEY;
+if (!TREASURY_PRIVATE_KEY) {
+  throw new Error("TREASURY_PRIVATE_KEY no definida");
+}
+
+const treasury = Keypair.fromSecretKey(
+  bs58.decode(TREASURY_PRIVATE_KEY)
+);
+
+const MINT = new PublicKey(
+  "6Z17TYRxJtPvHSGh7s6wtcERgxHGv37sBq6B9Sd1pump"
+);
+
+const TOKEN_DECIMALS = 6;
+
+/* ===============================
    HEALTH CHECK
 ================================ */
-app.get("/", (req, res) => {
-  res.status(200).send("OK");
-});
+app.get("/", (_, res) => res.send("OK"));
 
 /* ===============================
-   QR FÍSICO → REDIRECT A PHANTOM
-   /r/:id
+   QR → PHANTOM
 ================================ */
 app.get("/r/:id", (req, res) => {
-  const { id } = req.params;
-
-  const targetUrl = `https://galapagos-backend.onrender.com/claim/${id}`;
-  const phantomLink =
-    "https://phantom.app/ul/browse/" + encodeURIComponent(targetUrl);
-
-  res.redirect(302, phantomLink);
+  const url = `https://galapagos-backend.onrender.com/claim/${req.params.id}`;
+  const phantom = "https://phantom.app/ul/browse/" + encodeURIComponent(url);
+  res.redirect(302, phantom);
 });
 
 /* ===============================
-   UI PHANTOM (BONITA)
-   GET /claim/:id
+   UI PHANTOM
 ================================ */
 app.get("/claim/:id", (req, res) => {
-  const { id } = req.params;
+  const qrs = JSON.parse(fs.readFileSync("qrs.json"));
+  const qr = qrs[req.params.id];
 
-  let qrs;
-  try {
-    qrs = JSON.parse(fs.readFileSync("qrs.json"));
-  } catch {
-    return res.status(500).send("Error leyendo qrs.json");
-  }
-
-  if (!qrs[id]) return res.status(404).send("QR no existe");
-  if (qrs[id].usado) return res.send("Este QR ya fue usado");
+  if (!qr) return res.send("QR no existe");
+  if (qr.usado) return res.send("QR ya usado");
 
   res.send(`
 <!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Galápagos Token</title>
-
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial;
-      background: linear-gradient(180deg, #0f2027, #203a43, #2c5364);
-      color: #ffffff;
-    }
-
-    .container {
-      max-width: 420px;
-      margin: 0 auto;
-      padding: 24px;
-    }
-
-    .card {
-      background: rgba(255,255,255,0.08);
-      border-radius: 18px;
-      padding: 24px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-      backdrop-filter: blur(12px);
-    }
-
-    h1 {
-      text-align: center;
-      margin: 0;
-      font-size: 22px;
-      font-weight: 700;
-    }
-
-    .subtitle {
-      text-align: center;
-      font-size: 14px;
-      opacity: 0.85;
-      margin: 12px 0 24px;
-    }
-
-    .info {
-      margin-bottom: 20px;
-    }
-
-    .info div {
-      display: flex;
-      justify-content: space-between;
-      font-size: 14px;
-      margin-bottom: 10px;
-    }
-
-    .info span {
-      font-weight: 600;
-    }
-
-    button {
-      width: 100%;
-      padding: 14px;
-      border-radius: 14px;
-      border: none;
-      background: linear-gradient(135deg, #00f5a0, #00d9f5);
-      color: #002b36;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    button:active {
-      transform: scale(0.97);
-    }
-
-    .footer {
-      text-align: center;
-      font-size: 12px;
-      opacity: 0.6;
-      margin-top: 18px;
-    }
-  </style>
-</head>
-
-<body>
-  <div class="container">
-    <div class="card">
-      <h1>🌱 Galápagos Token</h1>
-
-      <div class="subtitle">
-        Reclama tu recompensa sostenible
-      </div>
-
-      <div class="info">
-        <div>
-          <span>QR</span>
-          <span>${id}</span>
-        </div>
-        <div>
-          <span>Valor</span>
-          <span>$${qrs[id].valor_usd} USD</span>
-        </div>
-        <div>
-          <span>Recompensa</span>
-          <span>1% en GALA</span>
-        </div>
-      </div>
-
-      <button onclick="firmar()">
-        Firmar y reclamar
-      </button>
-    </div>
-
-    <div class="footer">
-      Powered by Solana · Phantom Wallet
-    </div>
-  </div>
+<html>
+<body style="font-family:sans-serif;background:#0f2027;color:white;padding:20px">
+<h2>🌱 Galápagos Token</h2>
+<p>QR: ${req.params.id}</p>
+<p>Valor: $${qr.valor_usd} USD</p>
+<button onclick="firmar()">Firmar y reclamar</button>
 
 <script>
 async function firmar() {
-  try {
-    if (!window.solana || !window.solana.isPhantom) {
-      alert("Abre este enlace desde Phantom Wallet");
-      return;
-    }
+  const provider = window.solana;
+  if (!provider) return alert("Abre desde Phantom");
 
-    const provider = window.solana;
-    await provider.connect();
+  await provider.connect();
+  const msg = new TextEncoder().encode("Reclamo QR ${req.params.id}");
+  const sig = await provider.signMessage(msg, "utf8");
 
-    const mensaje = new TextEncoder().encode("Reclamo QR ${id}");
-    const firmado = await provider.signMessage(mensaje, "utf8");
+  const r = await fetch("/claim/${req.params.id}/sign", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      publicKey: provider.publicKey.toString(),
+      signature: Array.from(sig.signature)
+    })
+  });
 
-    const res = await fetch(
-      "https://galapagos-backend.onrender.com/claim/${id}/sign",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          publicKey: provider.publicKey.toString(),
-          signature: Array.from(firmado.signature)
-        })
-      }
-    );
-
-    const data = await res.json();
-    alert(data.mensaje || "Proceso completado");
-
-  } catch (err) {
-    alert("Error: " + err.message);
-  }
+  const d = await r.json();
+  alert(d.mensaje || d.error);
 }
 </script>
-
 </body>
 </html>
 `);
 });
 
 /* ===============================
-   RECIBE FIRMA (SIN TOKEN AÚN)
-   POST /claim/:id/sign
+   FIRMA + ENVÍO TOKEN
 ================================ */
-app.post("/claim/:id/sign", (req, res) => {
-  const { id } = req.params;
-  const { publicKey, signature } = req.body;
+app.post("/claim/:id/sign", async (req, res) => {
+  const { publicKey } = req.body;
+  const qrs = JSON.parse(fs.readFileSync("qrs.json"));
+  const qr = qrs[req.params.id];
 
-  if (!publicKey || !signature) {
-    return res.status(400).json({ error: "Datos incompletos" });
-  }
+  if (!qr) return res.json({ error: "QR no existe" });
+  if (qr.usado) return res.json({ error: "QR ya usado" });
 
-  let qrs;
   try {
-    qrs = JSON.parse(fs.readFileSync("qrs.json"));
-  } catch {
-    return res.status(500).json({ error: "Error leyendo qrs.json" });
+    const user = new PublicKey(publicKey);
+
+    const treasuryATA = await getAssociatedTokenAddress(
+      MINT,
+      treasury.publicKey
+    );
+
+    const userATA = await getAssociatedTokenAddress(
+      MINT,
+      user
+    );
+
+    const tx = new Transaction();
+
+    const userAccountInfo = await connection.getAccountInfo(userATA);
+    if (!userAccountInfo) {
+      tx.add(
+        createAssociatedTokenAccountInstruction(
+          treasury.publicKey,
+          userATA,
+          user,
+          MINT
+        )
+      );
+    }
+
+    const rewardTokens =
+      Math.floor(qr.valor_usd * 0.01 * 10 ** TOKEN_DECIMALS);
+
+    tx.add(
+      createTransferInstruction(
+        treasuryATA,
+        userATA,
+        treasury.publicKey,
+        rewardTokens
+      )
+    );
+
+    const sig = await connection.sendTransaction(tx, [treasury]);
+    await connection.confirmTransaction(sig);
+
+    qr.usado = true;
+    qrs[req.params.id] = qr;
+    fs.writeFileSync("qrs.json", JSON.stringify(qrs, null, 2));
+
+    res.json({
+      success: true,
+      mensaje: "🎉 Recompensa enviada",
+      tx: sig
+    });
+
+  } catch (e) {
+    res.json({ error: e.message });
   }
-
-  if (!qrs[id]) return res.status(404).json({ error: "QR no existe" });
-  if (qrs[id].usado)
-    return res.status(400).json({ error: "QR ya usado" });
-
-  res.json({
-    success: true,
-    mensaje: "Firma recibida correctamente ✅ Backend listo",
-    wallet: publicKey
-  });
 });
 
 /* ===============================
    SERVER
 ================================ */
-const PORT = process.env.PORT || 8080;
 const server = http.createServer(app);
-
-server.listen(PORT, "0.0.0.0", () => {
-  console.log("Backend corriendo en puerto " + PORT);
-});
-
-server.keepAliveTimeout = 120000;
-server.headersTimeout = 120000;
+server.listen(process.env.PORT || 8080, "0.0.0.0");
