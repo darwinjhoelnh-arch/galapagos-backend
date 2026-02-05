@@ -222,12 +222,12 @@ app.post("/claim/:id/sign", (req, res) => {
     return res.status(400).json({ error: "QR ya usado" });
   }
 
-  res.json({
-    success: true,
-    mensaje: "Firma correcta. Recompensa validada ✅",
-    wallet: publicKey
-  });
+res.json({
+  success: true,
+  mensaje: "🌱 ¡Felicidades! Ya eres parte de Galápagos Token. Gracias por apoyar la vida y el planeta 🌍",
+  wallet: publicKey
 });
+
 
 /* ===============================
    SERVER
