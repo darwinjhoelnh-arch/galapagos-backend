@@ -1,0 +1,5 @@
+{
+  "GAL-0001": { "valor_usd": 100, "usado": false },
+  "GAL-0002": { "valor_usd": 100, "usado": false },
+  "GAL-0003": { "valor_usd": 100, "usado": false }
+}
