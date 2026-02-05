@@ -15,7 +15,7 @@ app.get("/", (req, res) => {
 });
 
 /* ===============================
-   REDIRECT QR → PHANTOM
+   QR → PHANTOM DEEP LINK
 ================================ */
 app.get("/r/:id", (req, res) => {
   const { id } = req.params;
@@ -88,16 +88,13 @@ app.get("/claim/:id", (req, res) => {
     font-size: 22px;
     font-weight: bold;
     color: #00e38c;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
   .subtitle {
     text-align: center;
     font-size: 13px;
     color: #9ddfc2;
     margin-bottom: 24px;
-  }
-  .data {
-    margin-bottom: 18px;
   }
   .label {
     font-size: 12px;
@@ -106,6 +103,9 @@ app.get("/claim/:id", (req, res) => {
   .value {
     font-size: 18px;
     margin-top: 4px;
+  }
+  .block {
+    margin-bottom: 18px;
   }
   .reward {
     margin: 22px 0;
@@ -140,6 +140,16 @@ app.get("/claim/:id", (req, res) => {
     font-size: 11px;
     color: #7bbfa3;
   }
+  .success-box {
+    margin-top: 18px;
+    padding: 16px;
+    border-radius: 12px;
+    background: rgba(0,255,150,0.15);
+    border: 1px solid #00ff9c;
+    color: #dfffee;
+    text-align: center;
+    font-size: 15px;
+  }
 </style>
 </head>
 
@@ -149,12 +159,12 @@ app.get("/claim/:id", (req, res) => {
     <div class="logo">GALÁPAGOS TOKEN</div>
     <div class="subtitle">Tecnología para preservar la vida</div>
 
-    <div class="data">
+    <div class="block">
       <div class="label">QR ID</div>
       <div class="value">${id}</div>
     </div>
 
-    <div class="data">
+    <div class="block">
       <div class="label">Valor del QR</div>
       <div class="value">$${valorUsd} USD</div>
     </div>
@@ -166,6 +176,8 @@ app.get("/claim/:id", (req, res) => {
 
     <button onclick="firmar()">Firmar y reclamar</button>
 
+    <div id="resultado"></div>
+
     <div class="footer">
       Reclamo seguro vía Phantom Wallet
     </div>
@@ -176,7 +188,8 @@ app.get("/claim/:id", (req, res) => {
 async function firmar() {
   const provider = window.solana;
   if (!provider) {
-    alert("Phantom no disponible");
+    document.getElementById("resultado").innerHTML =
+      "<div class='success-box'>Phantom no disponible</div>";
     return;
   }
 
@@ -193,7 +206,14 @@ async function firmar() {
   });
 
   const data = await res.json();
-  alert(data.mensaje || "Proceso completado");
+
+  document.getElementById("resultado").innerHTML = `
+    <div class="success-box">
+      🌱 <strong>¡Felicidades!</strong><br><br>
+      Ya eres parte de <b>Galápagos Token</b>.<br>
+      Gracias por apoyar la vida y el planeta 🌍
+    </div>
+  `;
 }
 </script>
 </body>
@@ -222,12 +242,12 @@ app.post("/claim/:id/sign", (req, res) => {
     return res.status(400).json({ error: "QR ya usado" });
   }
 
-res.json({
-  success: true,
-  mensaje: "🌱 ¡Felicidades! Ya eres parte de Galápagos Token. Gracias por apoyar la vida y el planeta 🌍",
-  wallet: publicKey
+  res.json({
+    success: true,
+    mensaje: "OK",
+    wallet: publicKey
+  });
 });
-
 
 /* ===============================
    SERVER
