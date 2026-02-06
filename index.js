@@ -1,9 +1,9 @@
 import express from "express";
+import cors from "cors";
 import pkg from "pg";
 import QRCode from "qrcode";
 import archiver from "archiver";
-import cors from "cors";
-import { Readable } from "stream";
+import crypto from "crypto";
 
 const { Pool } = pkg;
 
@@ -11,25 +11,33 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const ADMIN_TOKEN = "galapagos_admin_2026";
-const BASE_URL = "https://galapagos-backend.onrender.com";
+/* ================= CONFIG ================= */
+
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "galapagos_admin_2026";
+const BASE_URL = process.env.BASE_URL || "https://galapagos-backend.onrender.com";
+const PORT = process.env.PORT || 10000;
+
+/* ================= DATABASE ================= */
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: false },
 });
 
-/* =========================
-   ADMIN DASHBOARD
-========================= */
+/* ================= HEALTH ================= */
+
+app.get("/", (_, res) => res.send("OK"));
+
+/* ================= ADMIN UI ================= */
+
 app.get("/admin", async (req, res) => {
   if (req.query.token !== ADMIN_TOKEN) return res.send("Unauthorized");
 
   const { rows } = await pool.query(`
-    SELECT id, product_name, value_usd, batch_id, claimed_at
+    SELECT id, product_name, value_usd,
+    CASE WHEN claimed_at IS NULL THEN 'Activo' ELSE 'Reclamado' END estado
     FROM qrs
     ORDER BY created_at DESC
-    LIMIT 100
   `);
 
   res.send(`
@@ -37,163 +45,195 @@ app.get("/admin", async (req, res) => {
 <html>
 <head>
 <meta charset="utf-8"/>
-<title>Galápagos Admin</title>
+<title>Galápagos Token Admin</title>
 <style>
 body{
-  background:radial-gradient(circle,#003b2f,#000);
-  color:#eafff6;
+  background:#001b14;
+  color:#aaffdd;
   font-family:Arial;
+  padding:40px;
 }
 .card{
-  background:#031f18;
-  border:1px solid #0a4;
-  border-radius:16px;
+  background:#002b1f;
   padding:20px;
-  margin:20px auto;
-  width:90%;
-  max-width:700px;
-}
-input,button{
-  width:100%;
-  padding:12px;
-  margin-top:8px;
-  border-radius:8px;
-  border:none;
+  border-radius:16px;
+  margin-bottom:20px;
 }
 button{
-  background:#00ffb3;
-  font-weight:bold;
+  background:#00ffb2;
+  border:none;
+  padding:10px 20px;
+  border-radius:8px;
   cursor:pointer;
+  font-weight:bold;
+}
+input{
+  width:100%;
+  padding:10px;
+  margin:6px 0;
+  border-radius:6px;
+  border:none;
 }
 table{
   width:100%;
-  margin-top:10px;
+  margin-top:20px;
   font-size:12px;
 }
-td{padding:4px;}
+td,th{padding:6px;}
 </style>
 </head>
 <body>
 
+<h1>🌱 Galápagos Token Admin</h1>
+
 <div class="card">
-<h2>Generar QRs</h2>
-<input id="product" placeholder="Producto">
-<input id="value" placeholder="Valor USD">
-<input id="qty" placeholder="Cantidad">
+<h3>Generar QRs</h3>
+<input id="product" placeholder="Producto (ej: cafe)">
+<input id="usd" type="number" placeholder="Precio USD">
+<input id="qty" type="number" placeholder="Cantidad">
 <button onclick="gen()">Generar</button>
 </div>
 
 <div class="card">
-<h2>Descargar ZIP por producto</h2>
-<input id="batch" placeholder="Nombre del producto">
-<button onclick="zip()">Descargar ZIP</button>
+<h3>Descargar QRs</h3>
+<button onclick="download()">Descargar ZIP</button>
 </div>
 
 <div class="card">
-<h2>Últimos QRs</h2>
-<table>
+<h3>QRs existentes</h3>
+<table border="1">
+<tr><th>ID</th><th>Producto</th><th>USD</th><th>Estado</th></tr>
 ${rows.map(r=>`
 <tr>
+<td>${r.id}</td>
 <td>${r.product_name}</td>
-<td>$${r.value_usd}</td>
-<td>${r.claimed_at ? "Reclamado" : "Activo"}</td>
-</tr>
-`).join("")}
+<td>${r.value_usd}</td>
+<td>${r.estado}</td>
+</tr>`).join("")}
 </table>
 </div>
 
 <script>
 function gen(){
- fetch("/admin/generate?token=${ADMIN_TOKEN}",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({
-    product:product.value,
-    value:value.value,
-    qty:qty.value
-  })
- }).then(()=>location.reload());
+fetch('/admin/generate?token=${ADMIN_TOKEN}',{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({
+product:document.getElementById('product').value,
+usd:document.getElementById('usd').value,
+qty:document.getElementById('qty').value
+})
+}).then(()=>location.reload())
 }
 
-function zip(){
- window.location="/admin/download/"+batch.value+"?token=${ADMIN_TOKEN}";
+function download(){
+window.location='/admin/download?token=${ADMIN_TOKEN}'
 }
 </script>
+</body>
+</html>
+`);
+});
+
+/* ================= GENERAR QRS ================= */
+
+app.post("/admin/generate", async (req, res) => {
+  if (req.query.token !== ADMIN_TOKEN) return res.sendStatus(403);
+
+  const { product, usd, qty } = req.body;
+  if (!product || !usd || !qty) return res.sendStatus(400);
+
+  for (let i = 0; i < qty; i++) {
+    await pool.query(
+      `INSERT INTO qrs (product_name,value_usd)
+       VALUES ($1,$2)`,
+      [product, usd]
+    );
+  }
+
+  res.sendStatus(200);
+});
+
+/* ================= DESCARGAR ZIP ================= */
+
+app.get("/admin/download", async (req, res) => {
+  if (req.query.token !== ADMIN_TOKEN) return res.sendStatus(403);
+
+  const { rows } = await pool.query(
+    `SELECT id, product_name FROM qrs WHERE claimed_at IS NULL`
+  );
+
+  res.setHeader("Content-Type", "application/zip");
+  res.setHeader("Content-Disposition", "attachment; filename=qrs.zip");
+
+  const archive = archiver("zip");
+  archive.pipe(res);
+
+  for (const qr of rows) {
+    const claimUrl = `${BASE_URL}/claim/${qr.id}`;
+    const phantomUrl =
+      `https://phantom.app/ul/browse/${encodeURIComponent(claimUrl)}`;
+
+    const img = await QRCode.toBuffer(phantomUrl, { width: 800 });
+    archive.append(img, { name: `${qr.product_name}/${qr.id}.png` });
+  }
+
+  archive.finalize();
+});
+
+/* ================= CLAIM ================= */
+
+app.get("/claim/:id", async (req, res) => {
+  const { rows } = await pool.query(
+    `SELECT * FROM qrs WHERE id=$1`,
+    [req.params.id]
+  );
+
+  if (!rows.length) return res.send("QR inválido");
+  if (rows[0].claimed_at) return res.send("Este QR ya fue usado");
+
+  const reward = rows[0].value_usd * 0.01;
+
+  res.send(`
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Galápagos Token</title>
+<style>
+body{
+  background:#001b14;
+  color:#aaffdd;
+  font-family:Arial;
+  text-align:center;
+  padding-top:60px;
+}
+.card{
+  background:#002b1f;
+  border-radius:16px;
+  padding:30px;
+  width:90%;
+  max-width:400px;
+  margin:auto;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+<h1>🌱 Galápagos Token</h1>
+<p><b>Producto:</b> ${rows[0].product_name}</p>
+<p><b>Recompensa:</b> $${reward.toFixed(2)} USD</p>
+<p>✔ Abierto desde Phantom</p>
+</div>
 
 </body>
 </html>
 `);
 });
 
-/* =========================
-   GENERAR QRs
-========================= */
-app.post("/admin/generate", async (req, res) => {
-  if (req.query.token !== ADMIN_TOKEN) return res.sendStatus(401);
+/* ================= START ================= */
 
-  const { product, value, qty } = req.body;
-  const batch = product.toLowerCase().replace(/\s+/g,"_");
-
-  for (let i = 0; i < qty; i++) {
-    await pool.query(`
-      INSERT INTO qrs (product_name,value_usd,batch_id)
-      VALUES ($1,$2,$3)
-    `,[product,value,batch]);
-  }
-  res.send("OK");
+app.listen(PORT, () => {
+  console.log("Galápagos backend listo en puerto", PORT);
 });
-
-/* =========================
-   DESCARGAR ZIP
-========================= */
-app.get("/admin/download/:batch", async (req, res) => {
-  if (req.query.token !== ADMIN_TOKEN) return res.sendStatus(401);
-
-  const { rows } = await pool.query(
-    `SELECT id FROM qrs WHERE batch_id=$1`,
-    [req.params.batch]
-  );
-
-  res.setHeader("Content-Disposition","attachment; filename=qrs.zip");
-  const archive = archiver("zip");
-  archive.pipe(res);
-
-  for (const r of rows) {
-    const url = `${BASE_URL}/claim/${r.id}`;
-    const img = await QRCode.toBuffer(url);
-    archive.append(img,{name:`${req.params.batch}/${r.id}.png`});
-  }
-
-  archive.finalize();
-});
-
-/* =========================
-   RECLAMO QR
-========================= */
-app.get("/claim/:id", async (req, res) => {
-  const { rows } = await pool.query(
-    `SELECT product_name,value_usd,claimed_at FROM qrs WHERE id=$1`,
-    [req.params.id]
-  );
-
-  if (!rows.length) return res.send("QR inválido");
-  if (rows[0].claimed_at) return res.send("QR ya usado");
-
-  const reward = rows[0].value_usd * 0.01;
-
-  res.send(`
-<h2>🌱 Galápagos Token</h2>
-<p>Producto: ${rows[0].product_name}</p>
-<p>Recompensa: $${reward.toFixed(2)} USD</p>
-<button onclick="connect()">Conectar Phantom</button>
-
-<script>
-function connect(){
- if(!window.solana) alert("Instala Phantom");
- else window.solana.connect();
-}
-</script>
-`);
-});
-
-app.listen(3000,()=>console.log("OK"));
