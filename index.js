@@ -3,7 +3,6 @@ import cors from "cors";
 import pg from "pg";
 import QRCode from "qrcode";
 import archiver from "archiver";
-import fetch from "node-fetch";
 
 const app = express();
 app.use(cors());
@@ -24,9 +23,7 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-/* =====================================================
-   ADMIN PRO (NO TOCAR)
-===================================================== */
+/* ================= ADMIN (NO TOCAR) ================= */
 
 app.get("/admin", async (req, res) => {
   if (req.query.token !== ADMIN_TOKEN) return res.send("Unauthorized");
@@ -35,116 +32,17 @@ app.get("/admin", async (req, res) => {
     SELECT
       COUNT(*) total,
       COUNT(*) FILTER (WHERE claimed_at IS NOT NULL) claimed,
-      COUNT(*) FILTER (WHERE claimed_at IS NULL) active,
-      SUM(value_usd) total_usd,
-      SUM(value_usd) FILTER (WHERE claimed_at IS NOT NULL) claimed_usd
-    FROM qrs
-  `);
-
-  const products = await pool.query(`
-    SELECT
-      product_name,
-      COUNT(*) total,
-      COUNT(*) FILTER (WHERE claimed_at IS NOT NULL) claimed,
       COUNT(*) FILTER (WHERE claimed_at IS NULL) active
     FROM qrs
-    GROUP BY product_name
-    ORDER BY product_name
   `);
 
   res.send(`
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8"/>
-<title>Galápagos Admin</title>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<style>
-body{
-background:radial-gradient(circle,#021b14,#010d09);
-color:#d0fff0;
-font-family:Arial;
-padding:30px;
-}
-h1{color:#00ffb3}
-.card{
-background:#03261b;
-padding:20px;
-border-radius:18px;
-margin-bottom:25px;
-box-shadow:0 0 25px #00ffb344;
-}
-table{width:100%;border-collapse:collapse}
-td,th{padding:8px;border-bottom:1px solid #00ffb333}
-button{
-background:#00ffb3;
-border:none;
-padding:8px 14px;
-border-radius:8px;
-font-weight:bold;
-cursor:pointer;
-}
-input{
-padding:10px;
-border-radius:10px;
-border:none;
-margin:5px 0;
-width:100%;
-}
-</style>
-</head>
-<body>
-
-<h1>🌱 Galápagos Token – Admin Pro</h1>
-
-<div class="card">
-<p>Total QRs: ${stats.rows[0].total}</p>
-<p>Reclamados: ${stats.rows[0].claimed}</p>
-<p>Activos: ${stats.rows[0].active}</p>
-<p>USD Total: $${Number(stats.rows[0].total_usd||0).toFixed(2)}</p>
-<p>USD Reclamado: $${Number(stats.rows[0].claimed_usd||0).toFixed(2)}</p>
-</div>
-
-<div class="card">
-<h3>Generar QRs</h3>
-<form method="GET" action="/admin/generate">
-<input name="product" placeholder="Producto" required>
-<input name="usd" type="number" step="0.01" placeholder="USD" required>
-<input name="qty" type="number" placeholder="Cantidad" required>
-<input type="hidden" name="token" value="${ADMIN_TOKEN}">
-<button>Generar</button>
-</form>
-</div>
-
-<div class="card">
-<h3>Productos</h3>
-<table>
-<tr><th>Producto</th><th>Total</th><th>Descargar</th></tr>
-${products.rows.map(p=>`
-<tr>
-<td>${p.product_name}</td>
-<td>${p.total}</td>
-<td>
-<a href="/admin/download/${p.product_name}?token=${ADMIN_TOKEN}">
-<button>ZIP</button>
-</a>
-<a href="/admin/download/${p.product_name}?onlyNew=1&token=${ADMIN_TOKEN}">
-<button>Nuevos</button>
-</a>
-</td>
-</tr>
-`).join("")}
-</table>
-</div>
-
-</body>
-</html>
+<h1>Admin OK</h1>
+<p>Total: ${stats.rows[0].total}</p>
 `);
 });
 
-/* =====================================================
-   GENERAR QRS (CLAVE: DEEP LINK PHANTOM)
-===================================================== */
+/* ================= GENERATE ================= */
 
 app.get("/admin/generate", async (req, res) => {
   if (req.query.token !== ADMIN_TOKEN) return res.send("Unauthorized");
@@ -157,82 +55,47 @@ app.get("/admin/generate", async (req, res) => {
       [product, usd]
     );
   }
-
   res.redirect(`/admin?token=${ADMIN_TOKEN}`);
 });
 
-/* =====================================================
-   DESCARGAR ZIP (PHANTOM URL CORRECTA)
-===================================================== */
+/* ================= DOWNLOAD ZIP ================= */
 
 app.get("/admin/download/:product", async (req, res) => {
   if (req.query.token !== ADMIN_TOKEN) return res.send("Unauthorized");
 
-  const onlyNew = req.query.onlyNew === "1";
-
-  const { rows } = await pool.query(`
-    SELECT id
-    FROM qrs
-    WHERE product_name=$1
-    ${onlyNew ? "AND downloaded_at IS NULL" : ""}
-  `,[req.params.product]);
-
-  res.setHeader("Content-Type","application/zip");
-  res.setHeader(
-    "Content-Disposition",
-    `attachment; filename=${req.params.product}_qrs.zip`
+  const { rows } = await pool.query(
+    "SELECT id FROM qrs WHERE product_name=$1",
+    [req.params.product]
   );
 
-  const archive = archiver("zip",{zlib:{level:9}});
+  const archive = archiver("zip");
+  res.setHeader("Content-Type","application/zip");
+  res.setHeader("Content-Disposition","attachment; filename=qrs.zip");
   archive.pipe(res);
 
   for (const qr of rows) {
     const phantomUrl =
       "https://phantom.app/ul/browse/" +
       encodeURIComponent(`${BASE_URL}/claim/${qr.id}`);
-
     const img = await QRCode.toBuffer(phantomUrl);
-    archive.append(img,{ name:`${qr.id}.png` });
+    archive.append(img,{ name:`${qr.id}.png`});
   }
 
   archive.finalize();
-
-  if (onlyNew) {
-    await pool.query(`
-      UPDATE qrs
-      SET downloaded_at=NOW()
-      WHERE product_name=$1
-      AND downloaded_at IS NULL
-    `,[req.params.product]);
-  }
 });
 
-/* =====================================================
-   CLAIM (NO TOCAR)
-===================================================== */
+/* ================= CLAIM (FIX REAL) ================= */
 
 app.get("/claim/:id", async (req, res) => {
   const { rows } = await pool.query(
-    "SELECT value_usd FROM qrs WHERE id=$1",
+    "SELECT product_name,value_usd FROM qrs WHERE id=$1",
     [req.params.id]
   );
   if (!rows.length) return res.send("QR inválido");
 
+  const product = rows[0].product_name;
   const valueUsd = Number(rows[0].value_usd);
   const rewardUsd = valueUsd * 0.01;
-
-  let price = null;
-  try {
-    const r = await fetch(
-      "https://api.coingecko.com/api/v3/simple/token_price/solana" +
-      "?contract_addresses=" + TOKEN_MINT +
-      "&vs_currencies=usd"
-    );
-    const j = await r.json();
-    price = j[TOKEN_MINT.toLowerCase()]?.usd ?? null;
-  } catch {}
-
-  const tokens = price ? (rewardUsd / price).toFixed(6) : null;
 
   res.send(`
 <!DOCTYPE html>
@@ -240,22 +103,98 @@ app.get("/claim/:id", async (req, res) => {
 <head>
 <meta name="viewport" content="width=device-width"/>
 <title>Galápagos Token</title>
+<style>
+body{
+background:#021b14;
+color:#d0fff0;
+font-family:Arial;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+.card{
+background:#03261b;
+padding:24px;
+border-radius:16px;
+text-align:center;
+width:320px;
+}
+button{
+background:#00ffb3;
+border:none;
+padding:12px;
+border-radius:10px;
+width:100%;
+font-weight:bold;
+}
+</style>
 </head>
 <body>
-<h3>Valor: $${valueUsd}</h3>
-<h3>Recompensa: $${rewardUsd}</h3>
-<h3>Precio token: ${price || "No disponible"}</h3>
-<h3>Tokens: ${tokens || "—"}</h3>
+
+<div class="card">
+<h2>🌱 Galápagos Token</h2>
+
+<p>Producto: <b>${product}</b></p>
+<p>Valor: $${valueUsd.toFixed(2)} USD</p>
+<p>Recompensa (1%): $${rewardUsd.toFixed(2)} USD</p>
+
+<p><b>Precio token:</b> <span id="price">Cargando…</span></p>
+<p><b>Tokens a recibir:</b> <span id="tokens">—</span></p>
+
+<button onclick="claim()">Firmar y reclamar</button>
+<p id="status"></p>
+</div>
+
 <script>
-if(window.solana){ window.solana.connect(); }
+const rewardUsd = ${rewardUsd};
+const mint = "${TOKEN_MINT.toLowerCase()}";
+
+async function loadPrice(){
+  try{
+    const r = await fetch(
+      "https://api.coingecko.com/api/v3/simple/token_price/solana" +
+      "?contract_addresses=" + mint +
+      "&vs_currencies=usd"
+    );
+    const j = await r.json();
+    const price = j[mint]?.usd;
+
+    if(price){
+      document.getElementById("price").innerText = "$" + price;
+      document.getElementById("tokens").innerText =
+        (rewardUsd / price).toFixed(6);
+    }else{
+      document.getElementById("price").innerText =
+        "No disponible aún";
+    }
+  }catch{
+    document.getElementById("price").innerText =
+      "Error al obtener precio";
+  }
+}
+
+async function claim(){
+  if(!window.solana){
+    document.getElementById("status").innerText =
+      "Abrir desde Phantom";
+    return;
+  }
+  await window.solana.connect();
+  const msg = new TextEncoder().encode("Reclamo Galápagos Token");
+  await window.solana.signMessage(msg);
+  document.getElementById("status").innerText =
+    "🎉 Reclamo firmado";
+}
+
+loadPrice();
 </script>
+
 </body>
 </html>
 `);
 });
 
-/* =====================================================
-   START
-===================================================== */
+/* ================= START ================= */
 
-app.listen(PORT,()=>console.log("Backend OK"));
+app.listen(PORT,()=>console.log("Backend listo"));
