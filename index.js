@@ -1,9 +1,9 @@
 import express from "express";
 import cors from "cors";
+import crypto from "crypto";
 import pkg from "pg";
 import QRCode from "qrcode";
 import archiver from "archiver";
-import crypto from "crypto";
 
 const { Pool } = pkg;
 
@@ -11,132 +11,118 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+/* ===============================
+   DATABASE
+================================ */
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+  ssl: { rejectUnauthorized: false }
 });
 
-const BASE_URL = process.env.BASE_URL;
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
+/* ===============================
+   HEALTH CHECK
+================================ */
+app.get("/", (req, res) => {
+  res.send("OK");
+});
 
-/* ======================
-   HEALTH
-====================== */
-app.get("/", (_, res) => res.send("OK"));
-
-/* ======================
-   ADMIN UI
-====================== */
-app.get("/admin", async (req, res) => {
-  if (req.query.token !== ADMIN_TOKEN) {
-    return res.status(401).send("Unauthorized");
+/* ===============================
+   ADMIN AUTH
+================================ */
+function adminAuth(req, res, next) {
+  if (req.query.token !== "galapagos_admin_2026") {
+    return res.status(403).send("Unauthorized");
   }
+  next();
+}
 
-  const { rows } = await pool.query(`
-   SELECT 
-  product_name,
-  batch_id,
-  value_usd,
-  COUNT(*) AS total,
-  MAX(created_at) AS created_at
-FROM qrs
-WHERE batch_id IS NOT NULL
-GROUP BY product_name, batch_id, value_usd
-ORDER BY created_at DESC
-
-  `);
-
+/* ===============================
+   ADMIN DASHBOARD
+================================ */
+app.get("/admin", adminAuth, (req, res) => {
   res.send(`
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8" />
-<title>Galápagos Token Admin</title>
-<style>
-body{
-  background:radial-gradient(circle at top,#0a3d2e,#000);
-  font-family:Arial;
-  color:#e0fff5;
-}
-.container{max-width:900px;margin:40px auto;}
-.card{
-  background:#041b15;
-  border:1px solid #0f5132;
-  border-radius:16px;
-  padding:20px;
-  margin-bottom:20px;
-  box-shadow:0 0 25px rgba(0,255,180,.15);
-}
-h1,h2{color:#38f5c5}
-button{
-  background:#20c997;
-  color:#000;
-  border:none;
-  padding:10px 18px;
-  border-radius:8px;
-  cursor:pointer;
-  font-weight:bold;
-}
-input{
-  width:100%;
-  padding:10px;
-  margin:6px 0;
-  border-radius:6px;
-  border:none;
-}
-small{color:#9df}
-</style>
+  <meta charset="utf-8"/>
+  <title>Galápagos Admin</title>
+  <style>
+    body{
+      background: radial-gradient(circle at top,#003b2f,#000);
+      font-family: Arial;
+      color:#eafff6;
+      padding:40px;
+    }
+    h1{color:#00ffb3}
+    .card{
+      background:#031f18;
+      border:1px solid #0a4;
+      border-radius:16px;
+      padding:20px;
+      margin-bottom:20px;
+      box-shadow:0 0 40px #00ffb322;
+    }
+    input,button{
+      width:100%;
+      padding:12px;
+      margin-top:10px;
+      border-radius:8px;
+      border:none;
+    }
+    button{
+      background:#00ffb3;
+      font-weight:bold;
+      cursor:pointer;
+    }
+  </style>
 </head>
 <body>
-<div class="container">
-  <h1>🌿 Galápagos Token Admin</h1>
 
-  <div class="card">
-    <h2>Generar QRs</h2>
-    <input id="product" placeholder="Producto" />
-    <input id="value" type="number" placeholder="Valor USD" />
-    <input id="qty" type="number" placeholder="Cantidad" />
-    <button onclick="generate()">Generar</button>
-  </div>
+<h1>🌱 Galápagos Token Admin</h1>
 
-  <div class="card">
-    <h2>Lotes generados</h2>
-    ${rows.map(r=>`
-      <div style="margin-bottom:12px">
-        <b>${r.product_name}</b> – $${r.value_usd} USD<br/>
-        QRs: ${r.total}<br/>
-        <a href="/admin/download/${r.batch_id}?token=${ADMIN_TOKEN}">
-          <button>Descargar ZIP</button>
-        </a>
-      </div>
-    `).join("")}
-  </div>
+<div class="card">
+  <h3>Generar QRs</h3>
+  <input id="product" placeholder="Producto"/>
+  <input id="price" type="number" placeholder="Valor USD"/>
+  <input id="qty" type="number" placeholder="Cantidad"/>
+  <button onclick="gen()">Generar</button>
+</div>
+
+<div class="card">
+  <h3>Descargar ZIP por producto</h3>
+  <input id="prodZip" placeholder="Nombre del producto"/>
+  <button onclick="zip()">Descargar ZIP</button>
 </div>
 
 <script>
-async function generate(){
-  const res = await fetch("/admin/generate?token=${ADMIN_TOKEN}",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
+function gen(){
+  fetch('/admin/generate?token=galapagos_admin_2026',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
       product_name:product.value,
-      value_usd:value.value,
-      quantity:qty.value
+      value_usd:Number(price.value),
+      quantity:Number(qty.value)
     })
-  });
-  if(res.ok) location.reload();
-  else alert("Error generando QRs");
+  })
+  .then(r=>r.json())
+  .then(d=>alert(d.success?'QRs generados':'Error'));
+}
+
+function zip(){
+  window.location='/admin/download/'+prodZip.value+'?token=galapagos_admin_2026';
 }
 </script>
+
 </body>
 </html>
 `);
 });
 
-/* ======================
-   GENERAR QRs
-====================== */
-app.post("/admin/generate", async (req, res) => {
+/* ===============================
+   GENERAR QRS
+================================ */
+app.post("/admin/generate", adminAuth, async (req, res) => {
   try {
     const { product_name, value_usd, quantity } = req.body;
 
@@ -144,73 +130,68 @@ app.post("/admin/generate", async (req, res) => {
       return res.status(400).json({ error: "Datos incompletos" });
     }
 
-    const batchId = crypto.randomUUID();
+    const batch = crypto.randomUUID();
 
     for (let i = 0; i < quantity; i++) {
       const id = crypto.randomUUID();
-
       await pool.query(
         `INSERT INTO qrs (id, product_name, value_usd, batch_id)
-         VALUES ($1, $2, $3, $4)`,
-        [id, product_name, value_usd, batchId]
+         VALUES ($1,$2,$3,$4)`,
+        [id, product_name, value_usd, batch]
       );
     }
 
-    res.json({ success: true, batchId });
+    res.json({ success: true, batch });
 
-  } catch (err) {
-    console.error("ERROR GENERANDO QRS:", err);
+  } catch (e) {
+    console.error(e);
     res.status(500).json({ error: "Error generando QRs" });
   }
 });
 
-/* ======================
+/* ===============================
    DESCARGAR ZIP
-====================== */
-if (!req.params.batchId || req.params.batchId === "null") {
-  return res.status(400).send("Batch inválido");
-}
-app.get("/admin/download/:batchId", async (req, res) => {
-  if (req.query.token !== ADMIN_TOKEN) {
-    return res.status(401).send("Unauthorized");
+================================ */
+app.get("/admin/download/:product", adminAuth, async (req, res) => {
+  try {
+    const { product } = req.params;
+
+    const { rows } = await pool.query(
+      `SELECT id FROM qrs WHERE product_name=$1`,
+      [product]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).send("Producto sin QRs");
+    }
+
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=${product}_qrs.zip`
+    );
+
+    const archive = archiver("zip");
+    archive.pipe(res);
+
+    for (const qr of rows) {
+      const url = `https://galapagos-backend.onrender.com/claim/${qr.id}`;
+      const img = await QRCode.toBuffer(url);
+      archive.append(img, { name: `${product}/${qr.id}.png` });
+    }
+
+    await archive.finalize();
+
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Error ZIP");
   }
-
-  const { batchId } = req.params;
-  const { rows } = await pool.query(
-    "SELECT * FROM qrs WHERE batch_id=$1",
-    [batchId]
-  );
-
-  res.setHeader("Content-Type", "application/zip");
-  res.setHeader("Content-Disposition", `attachment; filename=${batchId}.zip`);
-
-  const archive = archiver("zip");
-  archive.pipe(res);
-
-  for (const qr of rows) {
-    const url = `${BASE_URL}/r/${qr.id}`;
-    const img = await QRCode.toBuffer(url);
-    archive.append(img, {
-      name: `${qr.product_name}/${qr.id}.png`,
-    });
-  }
-
-  archive.finalize();
 });
 
-/* ======================
-   REDIRECT QR
-====================== */
-app.get("/r/:id", (req, res) => {
-  res.redirect(
-    `https://phantom.app/ul/browse/${encodeURIComponent(
-      BASE_URL + "/claim/" + req.params.id
-    )}`
-  );
-});
-
-/* ======================
+/* ===============================
    SERVER
-====================== */
+================================ */
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log("Backend listo en", PORT));
+app.listen(PORT, "0.0.0.0", () =>
+  console.log("Backend OK en puerto", PORT)
+);
