@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 3000;
 const BASE_URL = process.env.BASE_URL;
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 
-// MINT REAL GALAPAGOS TOKEN
+// MINT REAL
 const TOKEN_MINT =
   "6Z17TYRxJtPvHSGh7s6wtcERgxHGv37sBq6B9Sd1pump";
 
@@ -25,7 +25,7 @@ const pool = new Pool({
 });
 
 /* =====================================================
-   ADMIN DASHBOARD PRO (NO TOCAR)
+   ADMIN PRO (NO TOCAR)
 ===================================================== */
 
 app.get("/admin", async (req, res) => {
@@ -74,22 +74,13 @@ border-radius:18px;
 margin-bottom:25px;
 box-shadow:0 0 25px #00ffb344;
 }
-.grid{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-gap:15px;
-}
-.stat{
-background:#041f16;
-padding:15px;
-border-radius:14px;
-text-align:center;
-}
+table{width:100%;border-collapse:collapse}
+td,th{padding:8px;border-bottom:1px solid #00ffb333}
 button{
 background:#00ffb3;
 border:none;
-padding:10px 16px;
-border-radius:10px;
+padding:8px 14px;
+border-radius:8px;
 font-weight:bold;
 cursor:pointer;
 }
@@ -100,14 +91,6 @@ border:none;
 margin:5px 0;
 width:100%;
 }
-table{
-width:100%;
-border-collapse:collapse;
-}
-td,th{
-padding:8px;
-border-bottom:1px solid #00ffb333;
-}
 </style>
 </head>
 <body>
@@ -115,43 +98,32 @@ border-bottom:1px solid #00ffb333;
 <h1>🌱 Galápagos Token – Admin Pro</h1>
 
 <div class="card">
-<h3>📊 Estadísticas Globales</h3>
-<div class="grid">
-<div class="stat">Total QRs<br><b>${stats.rows[0].total}</b></div>
-<div class="stat">Reclamados<br><b>${stats.rows[0].claimed}</b></div>
-<div class="stat">Activos<br><b>${stats.rows[0].active}</b></div>
-<div class="stat">USD Total<br><b>$${Number(stats.rows[0].total_usd||0).toFixed(2)}</b></div>
-<div class="stat">USD Reclamado<br><b>$${Number(stats.rows[0].claimed_usd||0).toFixed(2)}</b></div>
-</div>
+<p>Total QRs: ${stats.rows[0].total}</p>
+<p>Reclamados: ${stats.rows[0].claimed}</p>
+<p>Activos: ${stats.rows[0].active}</p>
+<p>USD Total: $${Number(stats.rows[0].total_usd||0).toFixed(2)}</p>
+<p>USD Reclamado: $${Number(stats.rows[0].claimed_usd||0).toFixed(2)}</p>
 </div>
 
 <div class="card">
-<h3>➕ Generar QRs</h3>
+<h3>Generar QRs</h3>
 <form method="GET" action="/admin/generate">
 <input name="product" placeholder="Producto" required>
-<input name="usd" placeholder="Valor USD" type="number" step="0.01" required>
-<input name="qty" placeholder="Cantidad" type="number" required>
+<input name="usd" type="number" step="0.01" placeholder="USD" required>
+<input name="qty" type="number" placeholder="Cantidad" required>
 <input type="hidden" name="token" value="${ADMIN_TOKEN}">
 <button>Generar</button>
 </form>
 </div>
 
 <div class="card">
-<h3>📦 Productos</h3>
+<h3>Productos</h3>
 <table>
-<tr>
-<th>Producto</th>
-<th>Total</th>
-<th>Reclamados</th>
-<th>Activos</th>
-<th>Descargar</th>
-</tr>
+<tr><th>Producto</th><th>Total</th><th>Descargar</th></tr>
 ${products.rows.map(p=>`
 <tr>
 <td>${p.product_name}</td>
 <td>${p.total}</td>
-<td>${p.claimed}</td>
-<td>${p.active}</td>
 <td>
 <a href="/admin/download/${p.product_name}?token=${ADMIN_TOKEN}">
 <button>ZIP</button>
@@ -171,7 +143,7 @@ ${products.rows.map(p=>`
 });
 
 /* =====================================================
-   GENERAR QRS (NO TOCAR)
+   GENERAR QRS (CLAVE: DEEP LINK PHANTOM)
 ===================================================== */
 
 app.get("/admin/generate", async (req, res) => {
@@ -190,13 +162,12 @@ app.get("/admin/generate", async (req, res) => {
 });
 
 /* =====================================================
-   DESCARGAR ZIP (NO TOCAR)
+   DESCARGAR ZIP (PHANTOM URL CORRECTA)
 ===================================================== */
 
 app.get("/admin/download/:product", async (req, res) => {
   if (req.query.token !== ADMIN_TOKEN) return res.send("Unauthorized");
 
-  const { product } = req.params;
   const onlyNew = req.query.onlyNew === "1";
 
   const { rows } = await pool.query(`
@@ -204,14 +175,12 @@ app.get("/admin/download/:product", async (req, res) => {
     FROM qrs
     WHERE product_name=$1
     ${onlyNew ? "AND downloaded_at IS NULL" : ""}
-  `,[product]);
-
-  if (!rows.length) return res.send("No hay QRs");
+  `,[req.params.product]);
 
   res.setHeader("Content-Type","application/zip");
   res.setHeader(
     "Content-Disposition",
-    `attachment; filename=${product}_qrs.zip`
+    `attachment; filename=${req.params.product}_qrs.zip`
   );
 
   const archive = archiver("zip",{zlib:{level:9}});
@@ -223,10 +192,10 @@ app.get("/admin/download/:product", async (req, res) => {
       encodeURIComponent(`${BASE_URL}/claim/${qr.id}`);
 
     const img = await QRCode.toBuffer(phantomUrl);
-    archive.append(img,{ name:`${product}/${qr.id}.png` });
+    archive.append(img,{ name:`${qr.id}.png` });
   }
 
-  await archive.finalize();
+  archive.finalize();
 
   if (onlyNew) {
     await pool.query(`
@@ -234,27 +203,24 @@ app.get("/admin/download/:product", async (req, res) => {
       SET downloaded_at=NOW()
       WHERE product_name=$1
       AND downloaded_at IS NULL
-    `,[product]);
+    `,[req.params.product]);
   }
 });
 
 /* =====================================================
-   CLAIM (ÚNICO CAMBIO REAL AQUÍ)
+   CLAIM (NO TOCAR)
 ===================================================== */
 
 app.get("/claim/:id", async (req, res) => {
-  const { id } = req.params;
-
   const { rows } = await pool.query(
-    "SELECT product_name,value_usd FROM qrs WHERE id=$1",
-    [id]
+    "SELECT value_usd FROM qrs WHERE id=$1",
+    [req.params.id]
   );
   if (!rows.length) return res.send("QR inválido");
 
   const valueUsd = Number(rows[0].value_usd);
   const rewardUsd = valueUsd * 0.01;
 
-  // ===== FIX REAL DE PRECIO =====
   let price = null;
   try {
     const r = await fetch(
@@ -266,10 +232,7 @@ app.get("/claim/:id", async (req, res) => {
     price = j[TOKEN_MINT.toLowerCase()]?.usd ?? null;
   } catch {}
 
-  let tokens = null;
-  if (price && price > 0) {
-    tokens = (rewardUsd / price).toFixed(6);
-  }
+  const tokens = price ? (rewardUsd / price).toFixed(6) : null;
 
   res.send(`
 <!DOCTYPE html>
@@ -277,64 +240,14 @@ app.get("/claim/:id", async (req, res) => {
 <head>
 <meta name="viewport" content="width=device-width"/>
 <title>Galápagos Token</title>
-<style>
-body{
-background:radial-gradient(circle,#021b14,#010d09);
-color:#d0fff0;
-font-family:Arial;
-display:flex;
-justify-content:center;
-align-items:center;
-height:100vh;
-margin:0;
-}
-.card{
-background:#03261b;
-padding:26px;
-border-radius:18px;
-text-align:center;
-width:320px;
-}
-button{
-background:#00ffb3;
-border:none;
-padding:12px;
-border-radius:10px;
-width:100%;
-font-weight:bold;
-}
-</style>
 </head>
 <body>
-<div class="card">
-<h2>🌱 Galápagos Token</h2>
-
-<p>Valor producto: $${valueUsd.toFixed(2)} USD</p>
-<p>Recompensa (1%): $${rewardUsd.toFixed(2)} USD</p>
-
-<p><b>Precio del token:</b>
-${price ? `$${price}` : "No disponible aún"}
-</p>
-
-<p><b>Tokens a recibir:</b>
-${tokens ? tokens : "Se calculará al confirmar"}
-</p>
-
-<button onclick="claim()">Firmar y reclamar</button>
-<p id="s"></p>
-</div>
-
+<h3>Valor: $${valueUsd}</h3>
+<h3>Recompensa: $${rewardUsd}</h3>
+<h3>Precio token: ${price || "No disponible"}</h3>
+<h3>Tokens: ${tokens || "—"}</h3>
 <script>
-async function claim(){
-  if(!window.solana){
-    document.getElementById("s").innerText="Abrir desde Phantom";
-    return;
-  }
-  await window.solana.connect();
-  const msg=new TextEncoder().encode("Reclamo Galápagos Token");
-  await window.solana.signMessage(msg);
-  document.getElementById("s").innerText="🎉 Reclamo firmado";
-}
+if(window.solana){ window.solana.connect(); }
 </script>
 </body>
 </html>
@@ -345,4 +258,4 @@ async function claim(){
    START
 ===================================================== */
 
-app.listen(PORT,()=>console.log("Backend Galápagos listo"));
+app.listen(PORT,()=>console.log("Backend OK"));
