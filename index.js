@@ -1,185 +1,166 @@
 import express from "express";
-import fs from "fs";
 import cors from "cors";
+import fs from "fs";
 import http from "http";
 import fetch from "node-fetch";
+import bs58 from "bs58";
 
 import {
   Connection,
+  Keypair,
   PublicKey,
-  Keypair
+  Transaction
 } from "@solana/web3.js";
 
 import {
   getOrCreateAssociatedTokenAccount,
-  transfer
+  createTransferInstruction
 } from "@solana/spl-token";
 
-/* ===============================
-   CONFIG
-================================ */
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = process.env.PORT || 8080;
-
-const MINT_ADDRESS = "6Z17TYRxJtPvHSGh7s6wtcERgxHGv37sBq6B9Sd1pump";
-const DECIMALS = 6;
-
-const LOGO_URL =
-  "https://xtradeacademy.net/wp-content/uploads/2026/01/Black-White-Minimalist-Modern-Hiring-Designer-Information-Instagram-Media-Post-.png";
-
 /* ===============================
-   SOLANA SETUP
+   CONFIG
 ================================ */
-if (!process.env.TREASURY_PRIVATE_KEY) {
+const RPC_URL = process.env.RPC_URL;
+const TOKEN_MINT = new PublicKey(process.env.TOKEN_MINT);
+const TREASURY_PRIVATE_KEY = process.env.TREASURY_PRIVATE_KEY;
+
+if (!TREASURY_PRIVATE_KEY) {
   throw new Error("TREASURY_PRIVATE_KEY no definida");
 }
 
-const treasurySecret = JSON.parse(process.env.TREASURY_PRIVATE_KEY);
-const treasuryKeypair = Keypair.fromSecretKey(
-  Uint8Array.from(treasurySecret)
+const treasury = Keypair.fromSecretKey(
+  bs58.decode(TREASURY_PRIVATE_KEY)
 );
 
-const connection = new Connection(
-  "https://api.mainnet-beta.solana.com",
-  "confirmed"
-);
-
-/* ===============================
-   PRECIO TOKEN (CACHE)
-================================ */
-let cachedPrice = null;
-let lastFetch = 0;
-
-async function getTokenPriceUSD() {
-  const now = Date.now();
-  if (cachedPrice && now - lastFetch < 30000) {
-    return cachedPrice;
-  }
-
-  const res = await fetch(
-    "https://api.coingecko.com/api/v3/simple/price?ids=galapagos-token&vs_currencies=usd"
-  );
-  const data = await res.json();
-
-  cachedPrice = data["galapagos-token"].usd;
-  lastFetch = now;
-
-  return cachedPrice;
-}
+const connection = new Connection(RPC_URL, "confirmed");
 
 /* ===============================
    HEALTH CHECK
 ================================ */
 app.get("/", (req, res) => {
-  res.send("Galápagos Token Backend OK 🌱");
+  res.send("OK");
 });
 
 /* ===============================
    REDIRECT QR → PHANTOM
 ================================ */
 app.get("/r/:id", (req, res) => {
-  const { id } = req.params;
-
-  const phantomLink =
-    "https://phantom.app/ul/browse/" +
-    encodeURIComponent(
-      `https://galapagos-backend.onrender.com/claim/${id}`
-    );
-
+  const url = `https://galapagos-backend.onrender.com/claim/${req.params.id}`;
+  const phantomLink = `https://phantom.app/ul/browse/${encodeURIComponent(url)}`;
   res.redirect(302, phantomLink);
 });
 
 /* ===============================
-   PÁGINA DE RECLAMO
+   CLAIM PAGE
 ================================ */
 app.get("/claim/:id", async (req, res) => {
   const { id } = req.params;
   const qrs = JSON.parse(fs.readFileSync("qrs.json"));
 
-  if (!qrs[id]) return res.send("QR inválido");
-  if (qrs[id].usado) return res.send("Este QR ya fue reclamado");
+  if (!qrs[id]) return res.send("QR no existe");
+  if (qrs[id].usado) return res.send("Este QR ya fue usado");
 
-  const valorUsd = qrs[id].valor_usd;
-  const recompensaUsd = valorUsd * 0.01;
+  const usdValue = qrs[id].valor_usd;
+  const claimUsd = usdValue * 0.01;
 
-  let price;
-  try {
-    price = await getTokenPriceUSD();
-  } catch {
-    return res.send("No se pudo obtener el precio del token");
-  }
-
-  const tokens = (recompensaUsd / price).toFixed(4);
+  const priceRes = await fetch(
+    "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd"
+  );
+  const priceData = await priceRes.json();
+  const solPrice = priceData.solana.usd;
 
   res.send(`
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8"/>
 <title>Reclamar Galápagos Token</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body{margin:0;background:#050b08;font-family:Arial;color:#e8ffe8}
-.container{min-height:100vh;display:flex;align-items:center;justify-content:center}
-.card{background:#0c1f17;padding:30px;border-radius:18px;width:360px;text-align:center}
-.reward span{font-size:26px;color:#00ff9c}
-button{width:100%;padding:14px;border-radius:12px;border:none;background:#00ff9c;font-weight:bold}
-.success{margin-top:16px;padding:14px;background:rgba(0,255,150,.15);border-radius:12px}
+body{
+  background:radial-gradient(circle,#0b2f24,#000);
+  font-family:Arial;
+  color:#fff;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+.card{
+  background:rgba(0,0,0,.6);
+  padding:30px;
+  border-radius:20px;
+  width:320px;
+  text-align:center;
+  box-shadow:0 0 30px #00ffb3;
+}
+.logo{
+  width:140px;
+  margin-bottom:15px;
+}
+button{
+  background:#00c897;
+  border:none;
+  padding:15px;
+  width:100%;
+  border-radius:12px;
+  font-size:16px;
+  font-weight:bold;
+  cursor:pointer;
+}
+button:hover{opacity:.85}
+.success{
+  margin-top:15px;
+  color:#00ffb3;
+}
 </style>
 </head>
 
 <body>
-<div class="container">
-  <div class="card">
-    <img src="${LOGO_URL}" width="140" />
-    <h2>Galápagos Token</h2>
+<div class="card">
+  <img class="logo" src="https://xtradeacademy.net/wp-content/uploads/2026/01/Black-White-Minimalist-Modern-Hiring-Designer-Information-Instagram-Media-Post-.png"/>
+  <h2>GALÁPAGOS TOKEN</h2>
+  <p>Valor QR: <b>$${usdValue} USD</b></p>
+  <p>Reclamas: <b>$${claimUsd.toFixed(2)} USD</b></p>
 
-    <p>Valor QR: <b>$${valorUsd} USD</b></p>
-    <p>Precio actual token: <b>$${price} USD</b></p>
+  <button onclick="firmar()">Firmar y reclamar</button>
 
-    <div class="reward">
-      Recompensa (1%)
-      <span>${tokens} GAL</span>
-    </div>
-
-    <button onclick="firmar()">Firmar y reclamar</button>
-    <div id="res"></div>
-  </div>
-</div>
+  <div id="msg"></div>
 
 <script>
 async function firmar(){
-  if(!window.solana){
-    document.getElementById("res").innerHTML =
-      "<div class='success'>Abre desde Phantom</div>";
-    return;
-  }
+  const provider = window.solana;
+  if(!provider){ alert("Phantom no disponible"); return; }
 
-  await window.solana.connect();
-  const msg = new TextEncoder().encode("Reclamo Galápagos QR ${id}");
-  await window.solana.signMessage(msg,"utf8");
+  await provider.connect();
+  const message = new TextEncoder().encode("Reclamo Galapagos QR ${id}");
+  const signed = await provider.signMessage(message,"utf8");
 
   const r = await fetch("/claim/${id}/sign",{
     method:"POST",
     headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({ wallet:window.solana.publicKey.toString() })
+    body:JSON.stringify({
+      wallet:provider.publicKey.toString(),
+      signature:Array.from(signed.signature)
+    })
   });
 
-  document.getElementById("res").innerHTML =
-    "<div class='success'>🌱 Felicidades, ya eres parte de Galápagos Token</div>";
+  const d = await r.json();
+  document.getElementById("msg").innerHTML =
+    "<div class='success'>🎉 Felicidades por ser parte de Galápagos Token</div>";
 }
 </script>
-
+</div>
 </body>
 </html>
 `);
 });
 
 /* ===============================
-   ENVÍO REAL DE TOKENS
+   SIGN + TRANSFER
 ================================ */
 app.post("/claim/:id/sign", async (req, res) => {
   const { id } = req.params;
@@ -187,53 +168,57 @@ app.post("/claim/:id/sign", async (req, res) => {
 
   const qrs = JSON.parse(fs.readFileSync("qrs.json"));
   if (!qrs[id] || qrs[id].usado) {
-    return res.status(400).json({ error:"QR inválido" });
+    return res.status(400).json({ error: "QR inválido" });
   }
 
-  const recompensaUsd = qrs[id].valor_usd * 0.01;
-  const price = await getTokenPriceUSD();
-  const tokens = recompensaUsd / price;
-  const amount = Math.floor(tokens * 10 ** DECIMALS);
+  const usd = qrs[id].valor_usd * 0.01;
 
-  try {
-    const mint = new PublicKey(MINT_ADDRESS);
-    const user = new PublicKey(wallet);
+  const priceRes = await fetch(
+    "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd"
+  );
+  const priceData = await priceRes.json();
+  const tokenPrice = priceData.solana.usd;
 
-    const fromAccount = await getOrCreateAssociatedTokenAccount(
-      connection,
-      treasuryKeypair,
-      mint,
-      treasuryKeypair.publicKey
-    );
+  const tokens = (usd / tokenPrice) * 10 ** 6;
 
-    const toAccount = await getOrCreateAssociatedTokenAccount(
-      connection,
-      treasuryKeypair,
-      mint,
-      user
-    );
+  const userWallet = new PublicKey(wallet);
 
-    await transfer(
-      connection,
-      treasuryKeypair,
-      fromAccount.address,
-      toAccount.address,
-      treasuryKeypair,
-      amount
-    );
+  const fromATA = await getOrCreateAssociatedTokenAccount(
+    connection,
+    treasury,
+    TOKEN_MINT,
+    treasury.publicKey
+  );
 
-    qrs[id].usado = true;
-    fs.writeFileSync("qrs.json", JSON.stringify(qrs, null, 2));
+  const toATA = await getOrCreateAssociatedTokenAccount(
+    connection,
+    treasury,
+    TOKEN_MINT,
+    userWallet
+  );
 
-    res.json({ success:true });
-  } catch (e) {
-    res.status(500).json({ error:"Error enviando tokens" });
-  }
+  const tx = new Transaction().add(
+    createTransferInstruction(
+      fromATA.address,
+      toATA.address,
+      treasury.publicKey,
+      Math.floor(tokens)
+    )
+  );
+
+  await connection.sendTransaction(tx, [treasury]);
+
+  qrs[id].usado = true;
+  qrs[id].wallet = wallet;
+  fs.writeFileSync("qrs.json", JSON.stringify(qrs, null, 2));
+
+  res.json({ success: true });
 });
 
 /* ===============================
    SERVER
 ================================ */
-http.createServer(app).listen(PORT,"0.0.0.0",()=>{
-  console.log("Galápagos Backend LIVE 🚀");
-});
+const PORT = process.env.PORT || 8080;
+http.createServer(app).listen(PORT, "0.0.0.0", () =>
+  console.log("Galápagos Backend LIVE 🐢🚀")
+);
