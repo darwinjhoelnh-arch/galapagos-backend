@@ -190,7 +190,7 @@ app.get("/admin/download", async (req, res) => {
   archive.pipe(res);
 
   for (const qr of rows) {
-    const url = \`\${BASE_URL}/claim/\${qr.id}\`;
+    const url = \`\${BASE_URL}/claim/${qr.id}\`;
     const img = await QRCode.toBuffer(url);
     archive.append(img,{ name:\`\${qr.product_name}/\${qr.id}.png\` });
   }
