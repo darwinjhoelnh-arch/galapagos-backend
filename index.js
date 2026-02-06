@@ -282,6 +282,82 @@ app.post("/admin/qrs", adminAuth, async (req,res)=>{
 
   res.redirect("/admin?token="+req.query.token);
 });
+/* ===============================
+   ADMIN DASHBOARD (simple)
+   /admin?token=galapagos_admin_2026
+================================ */
+app.get("/admin", (req, res) => {
+  const { token } = req.query;
+
+  if (token !== "galapagos_admin_2026") {
+    return res.status(403).send("Acceso denegado");
+  }
+
+  res.send(`
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Galápagos Admin</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #050b0a;
+      color: #e6fff4;
+    }
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 30px;
+      background: linear-gradient(180deg, #071915, #020807);
+      border-radius: 20px;
+      box-shadow: 0 0 40px rgba(0,255,170,0.15);
+    }
+    h1 {
+      color: #00ffb3;
+      text-align: center;
+    }
+    .card {
+      background: #071f1a;
+      padding: 20px;
+      border-radius: 12px;
+      margin-top: 20px;
+      border: 1px solid #0aff9d33;
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 12px;
+      background: #00ffb3;
+      color: #003322;
+      border-radius: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🐢 Galápagos Token — Admin</h1>
+
+    <div class="card">
+      <p><strong>Estado:</strong> <span class="badge">ONLINE</span></p>
+      <p>Backend activo y listo para gestionar QR, reclamos y recompensas.</p>
+    </div>
+
+    <div class="card">
+      <h3>Próximos módulos</h3>
+      <ul>
+        <li>Generación masiva de QR</li>
+        <li>Dashboard de reclamos</li>
+        <li>Control de productos y valores</li>
+        <li>Historial on-chain</li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>
+  `);
+});
 
 /* ===============================
    SERVER
