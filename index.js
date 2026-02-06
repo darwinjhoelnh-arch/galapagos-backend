@@ -2,174 +2,174 @@ import express from "express";
 import fs from "fs";
 import cors from "cors";
 import http from "http";
+import fetch from "node-fetch";
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+import {
+  Connection,
+  PublicKey,
+  Keypair
+} from "@solana/web3.js";
+
+import {
+  getOrCreateAssociatedTokenAccount,
+  transfer
+} from "@solana/spl-token";
 
 /* ===============================
    CONFIG
 ================================ */
-const LOGO_BASE64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAYGBgYHBgcICAcKCwoLCg8ODAwODxYQERAREBYiFRkVFRkVIh4kHhweJB42KiYmKjY+NDI0PkxERExfWl98fKcB"; 
-// ⬆️ logo embebido (no depende de archivos externos)
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+const PORT = process.env.PORT || 8080;
+
+const MINT_ADDRESS = "6Z17TYRxJtPvHSGh7s6wtcERgxHGv37sBq6B9Sd1pump";
+const DECIMALS = 6;
+
+const LOGO_URL =
+  "https://xtradeacademy.net/wp-content/uploads/2026/01/Black-White-Minimalist-Modern-Hiring-Designer-Information-Instagram-Media-Post-.png";
+
+/* ===============================
+   SOLANA SETUP
+================================ */
+if (!process.env.TREASURY_PRIVATE_KEY) {
+  throw new Error("TREASURY_PRIVATE_KEY no definida");
+}
+
+const treasurySecret = JSON.parse(process.env.TREASURY_PRIVATE_KEY);
+const treasuryKeypair = Keypair.fromSecretKey(
+  Uint8Array.from(treasurySecret)
+);
+
+const connection = new Connection(
+  "https://api.mainnet-beta.solana.com",
+  "confirmed"
+);
+
+/* ===============================
+   PRECIO TOKEN (CACHE)
+================================ */
+let cachedPrice = null;
+let lastFetch = 0;
+
+async function getTokenPriceUSD() {
+  const now = Date.now();
+  if (cachedPrice && now - lastFetch < 30000) {
+    return cachedPrice;
+  }
+
+  const res = await fetch(
+    "https://api.coingecko.com/api/v3/simple/price?ids=galapagos-token&vs_currencies=usd"
+  );
+  const data = await res.json();
+
+  cachedPrice = data["galapagos-token"].usd;
+  lastFetch = now;
+
+  return cachedPrice;
+}
 
 /* ===============================
    HEALTH CHECK
 ================================ */
 app.get("/", (req, res) => {
-  res.send("OK");
+  res.send("Galápagos Token Backend OK 🌱");
 });
 
 /* ===============================
    REDIRECT QR → PHANTOM
-   /r/:id
 ================================ */
 app.get("/r/:id", (req, res) => {
   const { id } = req.params;
 
   const phantomLink =
     "https://phantom.app/ul/browse/" +
-    encodeURIComponent(`https://galapagos-backend.onrender.com/claim/${id}`);
+    encodeURIComponent(
+      `https://galapagos-backend.onrender.com/claim/${id}`
+    );
 
   res.redirect(302, phantomLink);
 });
 
 /* ===============================
    PÁGINA DE RECLAMO
-   GET /claim/:id
 ================================ */
-app.get("/claim/:id", (req, res) => {
+app.get("/claim/:id", async (req, res) => {
   const { id } = req.params;
+  const qrs = JSON.parse(fs.readFileSync("qrs.json"));
 
-  let qrs;
-  try {
-    qrs = JSON.parse(fs.readFileSync("qrs.json"));
-  } catch {
-    return res.send("Error interno");
-  }
-
-  if (!qrs[id]) return res.send("QR no válido");
+  if (!qrs[id]) return res.send("QR inválido");
   if (qrs[id].usado) return res.send("Este QR ya fue reclamado");
 
-  const valorUSD = qrs[id].valor_usd;
-  const recompensaUSD = (valorUSD * 0.01).toFixed(2);
+  const valorUsd = qrs[id].valor_usd;
+  const recompensaUsd = valorUsd * 0.01;
+
+  let price;
+  try {
+    price = await getTokenPriceUSD();
+  } catch {
+    return res.send("No se pudo obtener el precio del token");
+  }
+
+  const tokens = (recompensaUsd / price).toFixed(4);
 
   res.send(`
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <title>Reclamar Galápagos Token</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body {
-  margin:0;
-  background: radial-gradient(circle at top, #0f3d2e, #000);
-  font-family: 'Segoe UI', sans-serif;
-  color:#e8fff3;
-}
-
-.container {
-  max-width:420px;
-  margin:40px auto;
-  padding:30px;
-  border-radius:20px;
-  background: rgba(0,40,30,0.85);
-  box-shadow: 0 0 40px rgba(0,255,170,0.25);
-  text-align:center;
-}
-
-.logo {
-  width:120px;
-  margin-bottom:20px;
-}
-
-h1 {
-  color:#00ffb3;
-  font-size:22px;
-  margin-bottom:5px;
-}
-
-.subtitle {
-  font-size:13px;
-  opacity:.8;
-  margin-bottom:25px;
-}
-
-.value {
-  font-size:28px;
-  color:#00ff9c;
-  margin:20px 0;
-}
-
-button {
-  width:100%;
-  padding:15px;
-  font-size:16px;
-  background: linear-gradient(135deg,#00ff9c,#00c977);
-  border:none;
-  border-radius:12px;
-  color:#002;
-  font-weight:bold;
-  cursor:pointer;
-}
-
-button:hover {
-  opacity:.9;
-}
-
-.success-box {
-  margin-top:20px;
-  padding:15px;
-  background: rgba(0,255,160,.15);
-  border-radius:12px;
-  color:#9cffda;
-  display:none;
-}
+body{margin:0;background:#050b08;font-family:Arial;color:#e8ffe8}
+.container{min-height:100vh;display:flex;align-items:center;justify-content:center}
+.card{background:#0c1f17;padding:30px;border-radius:18px;width:360px;text-align:center}
+.reward span{font-size:26px;color:#00ff9c}
+button{width:100%;padding:14px;border-radius:12px;border:none;background:#00ff9c;font-weight:bold}
+.success{margin-top:16px;padding:14px;background:rgba(0,255,150,.15);border-radius:12px}
 </style>
 </head>
 
 <body>
 <div class="container">
+  <div class="card">
+    <img src="${LOGO_URL}" width="140" />
+    <h2>Galápagos Token</h2>
 
-<img src="${LOGO_BASE64}" class="logo" />
+    <p>Valor QR: <b>$${valorUsd} USD</b></p>
+    <p>Precio actual token: <b>$${price} USD</b></p>
 
-<h1>GALÁPAGOS TOKEN</h1>
-<div class="subtitle">Tecnología para preservar la vida</div>
+    <div class="reward">
+      Recompensa (1%)
+      <span>${tokens} GAL</span>
+    </div>
 
-<div class="value">$${recompensaUSD} USD en tokens</div>
-
-<button onclick="firmar()">Firmar y reclamar</button>
-
-<div id="success" class="success-box"></div>
-
+    <button onclick="firmar()">Firmar y reclamar</button>
+    <div id="res"></div>
+  </div>
 </div>
 
 <script>
-async function firmar() {
-  if (!window.solana) {
-    alert("Abre este enlace dentro de Phantom Wallet");
+async function firmar(){
+  if(!window.solana){
+    document.getElementById("res").innerHTML =
+      "<div class='success'>Abre desde Phantom</div>";
     return;
   }
 
-  const msg = new TextEncoder().encode("Reclamo Galápagos Token QR ${id}");
   await window.solana.connect();
-  const signed = await window.solana.signMessage(msg, "utf8");
+  const msg = new TextEncoder().encode("Reclamo Galápagos QR ${id}");
+  await window.solana.signMessage(msg,"utf8");
 
-  const res = await fetch("/claim/${id}/sign", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      publicKey: window.solana.publicKey.toString(),
-      signature: Array.from(signed.signature)
-    })
+  const r = await fetch("/claim/${id}/sign",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ wallet:window.solana.publicKey.toString() })
   });
 
-  const data = await res.json();
-  const box = document.getElementById("success");
-  box.style.display = "block";
-  box.innerHTML = "🌱 <strong>Felicidades por ser parte de Galápagos Token</strong><br/>Tu recompensa ha sido validada correctamente.";
+  document.getElementById("res").innerHTML =
+    "<div class='success'>🌱 Felicidades, ya eres parte de Galápagos Token</div>";
 }
 </script>
 
@@ -179,41 +179,61 @@ async function firmar() {
 });
 
 /* ===============================
-   RECIBE FIRMA
-   POST /claim/:id/sign
+   ENVÍO REAL DE TOKENS
 ================================ */
-app.post("/claim/:id/sign", (req, res) => {
+app.post("/claim/:id/sign", async (req, res) => {
   const { id } = req.params;
-  const { publicKey } = req.body;
+  const { wallet } = req.body;
 
-  if (!publicKey) {
-    return res.json({ error: "Firma inválida" });
-  }
-
-  let qrs = JSON.parse(fs.readFileSync("qrs.json"));
+  const qrs = JSON.parse(fs.readFileSync("qrs.json"));
   if (!qrs[id] || qrs[id].usado) {
-    return res.json({ error: "QR inválido" });
+    return res.status(400).json({ error:"QR inválido" });
   }
 
-  // (aquí luego va el envío real del token SPL)
-  qrs[id].usado = true;
-  fs.writeFileSync("qrs.json", JSON.stringify(qrs, null, 2));
+  const recompensaUsd = qrs[id].valor_usd * 0.01;
+  const price = await getTokenPriceUSD();
+  const tokens = recompensaUsd / price;
+  const amount = Math.floor(tokens * 10 ** DECIMALS);
 
-  res.json({
-    success: true,
-    mensaje: "Felicidades por ser parte de Galápagos Token 🌱"
-  });
+  try {
+    const mint = new PublicKey(MINT_ADDRESS);
+    const user = new PublicKey(wallet);
+
+    const fromAccount = await getOrCreateAssociatedTokenAccount(
+      connection,
+      treasuryKeypair,
+      mint,
+      treasuryKeypair.publicKey
+    );
+
+    const toAccount = await getOrCreateAssociatedTokenAccount(
+      connection,
+      treasuryKeypair,
+      mint,
+      user
+    );
+
+    await transfer(
+      connection,
+      treasuryKeypair,
+      fromAccount.address,
+      toAccount.address,
+      treasuryKeypair,
+      amount
+    );
+
+    qrs[id].usado = true;
+    fs.writeFileSync("qrs.json", JSON.stringify(qrs, null, 2));
+
+    res.json({ success:true });
+  } catch (e) {
+    res.status(500).json({ error:"Error enviando tokens" });
+  }
 });
 
 /* ===============================
    SERVER
 ================================ */
-const PORT = process.env.PORT || 8080;
-const server = http.createServer(app);
-
-server.listen(PORT, "0.0.0.0", () => {
-  console.log("Galápagos Backend corriendo en puerto " + PORT);
+http.createServer(app).listen(PORT,"0.0.0.0",()=>{
+  console.log("Galápagos Backend LIVE 🚀");
 });
-
-server.keepAliveTimeout = 120000;
-server.headersTimeout = 120000;
