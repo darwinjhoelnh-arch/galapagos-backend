@@ -177,6 +177,93 @@ app.get("/admin", async (req, res) => {
     return res.status(403).send("Acceso denegado");
   }
 
+  const qrs = await pool.query(`
+    SELECT
+      q.id,
+      q.value_usd,
+      q.used,
+      q.created_at,
+      c.wallet,
+      c.created_at AS claimed_at
+    FROM qrs q
+    LEFT JOIN claims c ON c.qr_id = q.id
+    ORDER BY q.created_at DESC
+  `);
+
+  const stats = await pool.query(`
+    SELECT
+      COUNT(*) AS total,
+      COUNT(*) FILTER (WHERE used = true) AS usados,
+      COUNT(*) FILTER (WHERE used = false) AS libres,
+      COALESCE(SUM(value_usd) FILTER (WHERE used = true),0) AS total_usd
+    FROM qrs
+  `);
+
+  const s = stats.rows[0];
+
+  res.send(`
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Galápagos Admin</title>
+<style>
+body{background:#050b0a;color:#eafff5;font-family:Arial}
+.container{max-width:1200px;margin:30px auto}
+.card{background:#041a12;padding:20px;border-radius:14px;margin-bottom:20px}
+h1{color:#00ffb3}
+.stat{display:inline-block;margin-right:20px}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px;border-bottom:1px solid #0aff9d22;font-size:13px}
+th{color:#0aff9d}
+.used{color:#ff6b6b;font-weight:bold}
+.free{color:#00ffb3;font-weight:bold}
+button{background:#00ffb3;border:none;padding:10px;border-radius:8px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>🐢 Galápagos Token — Admin</h1>
+
+<div class="card">
+  <div class="stat">Total QRs: <b>${s.total}</b></div>
+  <div class="stat">Usados: <b>${s.usados}</b></div>
+  <div class="stat">Libres: <b>${s.libres}</b></div>
+  <div class="stat">USD reclamado: <b>$${Number(s.total_usd).toFixed(2)}</b></div>
+  <br><br>
+  <a href="/admin/csv?token=${req.query.token}">
+    <button>⬇ Descargar CSV</button>
+  </a>
+</div>
+
+<div class="card">
+<table>
+<tr>
+<th>ID</th><th>USD</th><th>Estado</th><th>Wallet</th><th>Creado</th><th>Reclamado</th>
+</tr>
+${qrs.rows.map(r=>`
+<tr>
+<td>${r.id}</td>
+<td>$${r.value_usd}</td>
+<td class="${r.used?'used':'free'}">${r.used?'USADO':'LIBRE'}</td>
+<td>${r.wallet||'-'}</td>
+<td>${r.created_at?new Date(r.created_at).toLocaleString():''}</td>
+<td>${r.claimed_at?new Date(r.claimed_at).toLocaleString():''}</td>
+</tr>`).join("")}
+</table>
+</div>
+
+</div>
+</body>
+</html>
+`);
+});
+
+app.get("/admin/csv", async (req, res) => {
+  if (req.query.token !== process.env.ADMIN_TOKEN) {
+    return res.status(403).send("No autorizado");
+  }
+
   const { rows } = await pool.query(`
     SELECT
       q.id,
@@ -190,90 +277,16 @@ app.get("/admin", async (req, res) => {
     ORDER BY q.created_at DESC
   `);
 
-  res.send(`
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8" />
-<title>Galápagos Admin</title>
-<style>
-body{
-  margin:0;
-  font-family:Arial, sans-serif;
-  background:#050b0a;
-  color:#eafff5;
-}
-.container{
-  max-width:1200px;
-  margin:40px auto;
-  padding:20px;
-}
-h1{
-  color:#00ffb3;
-}
-table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:20px;
-}
-th, td{
-  padding:10px;
-  border-bottom:1px solid #0aff9d22;
-  font-size:14px;
-}
-th{
-  text-align:left;
-  color:#0aff9d;
-}
-.used{
-  color:#ff6b6b;
-  font-weight:bold;
-}
-.free{
-  color:#00ffb3;
-  font-weight:bold;
-}
-.badge{
-  padding:4px 10px;
-  border-radius:20px;
-  font-size:12px;
-}
-</style>
-</head>
-<body>
-<div class="container">
-  <h1>🐢 Galápagos Token — Admin Dashboard</h1>
-  <p>Total QRs: <b>${rows.length}</b></p>
+  let csv = "id,value_usd,used,wallet,created_at,claimed_at\n";
+  rows.forEach(r=>{
+    csv += `${r.id},${r.value_usd},${r.used},${r.wallet||""},${r.created_at||""},${r.claimed_at||""}\n`;
+  });
 
-  <table>
-    <tr>
-      <th>ID</th>
-      <th>Valor USD</th>
-      <th>Estado</th>
-      <th>Wallet</th>
-      <th>Creado</th>
-      <th>Reclamado</th>
-    </tr>
-
-    ${rows.map(r => `
-      <tr>
-        <td style="font-size:12px">${r.id}</td>
-        <td>$${r.value_usd}</td>
-        <td class="${r.used ? 'used' : 'free'}">
-          ${r.used ? 'USADO' : 'LIBRE'}
-        </td>
-        <td style="font-size:12px">${r.wallet || '-'}</td>
-        <td>${r.created_at ? new Date(r.created_at).toLocaleString() : '-'}</td>
-        <td>${r.claimed_at ? new Date(r.claimed_at).toLocaleString() : '-'}</td>
-      </tr>
-    `).join("")}
-
-  </table>
-</div>
-</body>
-</html>
-  `);
+  res.setHeader("Content-Type","text/csv");
+  res.setHeader("Content-Disposition","attachment; filename=galapagos_qrs.csv");
+  res.send(csv);
 });
+
 
 /* ===============================
    SERVER
