@@ -1,5 +1,2014 @@
 {
-  "GAL-0001": { "valor_usd": 100, "usado": false },
-  "GAL-0002": { "valor_usd": 100, "usado": false },
-  "GAL-0003": { "valor_usd": 100, "usado": false }
+  "GAL-0001": {
+    "valor_usd": 100,
+    "usado": false
+  },
+  "GAL-0002": {
+    "valor_usd": 100,
+    "usado": false
+  },
+  "GAL-0003": {
+    "valor_usd": 100,
+    "usado": false
+  },
+  "GAL-BOT-00001": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00002": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00003": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00004": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00005": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00006": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00007": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00008": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00009": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00010": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00011": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00012": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00013": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00014": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00015": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00016": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00017": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00018": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00019": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00020": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00021": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00022": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00023": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00024": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00025": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00026": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00027": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00028": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00029": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00030": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00031": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00032": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00033": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00034": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00035": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00036": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00037": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00038": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00039": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00040": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00041": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00042": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00043": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00044": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00045": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00046": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00047": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00048": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00049": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00050": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00051": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00052": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00053": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00054": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00055": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00056": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00057": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00058": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00059": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00060": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00061": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00062": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00063": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00064": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00065": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00066": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00067": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00068": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00069": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00070": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00071": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00072": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00073": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00074": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00075": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00076": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00077": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00078": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00079": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00080": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00081": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00082": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00083": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00084": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00085": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00086": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00087": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00088": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00089": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00090": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00091": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00092": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00093": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00094": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00095": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00096": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00097": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00098": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00099": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00100": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00101": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00102": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00103": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00104": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00105": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00106": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00107": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00108": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00109": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00110": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00111": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00112": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00113": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00114": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00115": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00116": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00117": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00118": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00119": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00120": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00121": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00122": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00123": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00124": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00125": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00126": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00127": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00128": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00129": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00130": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00131": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00132": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00133": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00134": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00135": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00136": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00137": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00138": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00139": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00140": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00141": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00142": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00143": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00144": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00145": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00146": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00147": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00148": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00149": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00150": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00151": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00152": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00153": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00154": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00155": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00156": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00157": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00158": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00159": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00160": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00161": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00162": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00163": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00164": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00165": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00166": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00167": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00168": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00169": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00170": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00171": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00172": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00173": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00174": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00175": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00176": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00177": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00178": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00179": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00180": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00181": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00182": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00183": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00184": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00185": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00186": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00187": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00188": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00189": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00190": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00191": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00192": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00193": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00194": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00195": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00196": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00197": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00198": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00199": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00200": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00201": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00202": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00203": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00204": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00205": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00206": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00207": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00208": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00209": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00210": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00211": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00212": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00213": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00214": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00215": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00216": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00217": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00218": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00219": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00220": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00221": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00222": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00223": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00224": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00225": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00226": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00227": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00228": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00229": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00230": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00231": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00232": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00233": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00234": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00235": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00236": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00237": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00238": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00239": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00240": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00241": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00242": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00243": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00244": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00245": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00246": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00247": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00248": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00249": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00250": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00251": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00252": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00253": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00254": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00255": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00256": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00257": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00258": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00259": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00260": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00261": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00262": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00263": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00264": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00265": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00266": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00267": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00268": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00269": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00270": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00271": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00272": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00273": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00274": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00275": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00276": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00277": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00278": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00279": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00280": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00281": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00282": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00283": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00284": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00285": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00286": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00287": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00288": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00289": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00290": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00291": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00292": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00293": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00294": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00295": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00296": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00297": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00298": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00299": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00300": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00301": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00302": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00303": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00304": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00305": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00306": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00307": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00308": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00309": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00310": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00311": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00312": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00313": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00314": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00315": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00316": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00317": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00318": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00319": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00320": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00321": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00322": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00323": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00324": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00325": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00326": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00327": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00328": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00329": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00330": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00331": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00332": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00333": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00334": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00335": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00336": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00337": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00338": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00339": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00340": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00341": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00342": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00343": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00344": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00345": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00346": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00347": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00348": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00349": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00350": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00351": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00352": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00353": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00354": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00355": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00356": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00357": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00358": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00359": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00360": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00361": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00362": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00363": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00364": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00365": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00366": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00367": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00368": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00369": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00370": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00371": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00372": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00373": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00374": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00375": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00376": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00377": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00378": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00379": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00380": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00381": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00382": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00383": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00384": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00385": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00386": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00387": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00388": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00389": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00390": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00391": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00392": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00393": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00394": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00395": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00396": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00397": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00398": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00399": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00400": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00401": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00402": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00403": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00404": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00405": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00406": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00407": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00408": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00409": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00410": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00411": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00412": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00413": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00414": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00415": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00416": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00417": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00418": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00419": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00420": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00421": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00422": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00423": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00424": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00425": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00426": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00427": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00428": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00429": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00430": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00431": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00432": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00433": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00434": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00435": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00436": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00437": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00438": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00439": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00440": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00441": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00442": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00443": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00444": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00445": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00446": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00447": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00448": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00449": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00450": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00451": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00452": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00453": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00454": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00455": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00456": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00457": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00458": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00459": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00460": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00461": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00462": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00463": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00464": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00465": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00466": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00467": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00468": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00469": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00470": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00471": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00472": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00473": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00474": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00475": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00476": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00477": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00478": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00479": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00480": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00481": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00482": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00483": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00484": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00485": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00486": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00487": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00488": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00489": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00490": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00491": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00492": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00493": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00494": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00495": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00496": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00497": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00498": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00499": {
+    "valor_usd": 50,
+    "usado": false
+  },
+  "GAL-BOT-00500": {
+    "valor_usd": 50,
+    "usado": false
+  }
 }
