@@ -152,21 +152,19 @@ app.get("/admin/download/:product", async (req, res) => {
 
 /* ================= CLAIM (NO TOCAR) ================= */
 
-app.get("/claim/:id", async (req, res) => {
+// ===============================
+// PHANTOM DEEP LINK FIX
+// ===============================
+app.get("/claim/:id", (req, res) => {
   const { id } = req.params;
 
-  // URL REAL de la página de reclamo
-  const claimUrl = `https://galapagos-backend.onrender.com/claim-page/${id}`;
+  const claimPageUrl = `https://galapagos-backend.onrender.com/claim-page/${id}`;
+  const encodedUrl = encodeURIComponent(claimPageUrl);
+  const phantomUrl = `https://phantom.app/ul/browse/${encodedUrl}`;
 
-  // Encode para Phantom
-  const encoded = encodeURIComponent(claimUrl);
-
-  // Deep link Phantom
-  const phantomUrl = `https://phantom.app/ul/browse/${encoded}`;
-
-  // Redirección directa
-  return res.redirect(302, phantomUrl);
+  res.redirect(302, phantomUrl);
 });
+
   res.send(`
 <!DOCTYPE html>
 <html>
