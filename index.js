@@ -11,7 +11,7 @@ app.use(express.json());
 const { Pool } = pg;
 
 const PORT = process.env.PORT || 3000;
-const BASE_URL = process.env.BASE_URL; // https://galapagos-backend.onrender.com
+const BASE_URL = process.env.BASE_URL;
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 const TOKEN_MINT = "6Z17TYRxJtPvHSGh7s6wtcERgxHGv37sBq6B9Sd1pump";
 
@@ -106,7 +106,7 @@ app.get("/admin/generate", async (req, res) => {
   res.redirect(`/admin?token=${ADMIN_TOKEN}`);
 });
 
-/* ================= ZIP ================= */
+/* ================= ZIP (FIX AQUÍ) ================= */
 
 app.get("/admin/download/:product", async (req, res) => {
   if (req.query.token !== ADMIN_TOKEN) return res.send("Unauthorized");
@@ -122,9 +122,11 @@ app.get("/admin/download/:product", async (req, res) => {
   archive.pipe(res);
 
   for (const qr of rows) {
+    // 🔥 Phantom abre DIRECTO la página final
     const phantomUrl =
       "https://phantom.app/ul/browse/" +
-      encodeURIComponent(`${BASE_URL}/claim/${qr.id}`);
+      encodeURIComponent(`${BASE_URL}/claim-page/${qr.id}`);
+
     const img = await QRCode.toBuffer(phantomUrl);
     archive.append(img, { name: `${qr.id}.png` });
   }
@@ -132,23 +134,11 @@ app.get("/admin/download/:product", async (req, res) => {
   archive.finalize();
 });
 
-/* ================= CLAIM REDIRECT (FIX LOOP) ================= */
+/* ================= CLAIM (YA NO REDIRIGE) ================= */
 
 app.get("/claim/:id", (req, res) => {
-  const { id } = req.params;
-  const ua = (req.headers["user-agent"] || "").toLowerCase();
-
-  // Si YA estamos dentro de Phantom → ir a la página real
-  if (ua.includes("phantom")) {
-    return res.redirect(302, `${BASE_URL}/claim-page/${id}`);
-  }
-
-  // Si NO → abrir Phantom
-  const phantomUrl =
-    "https://phantom.app/ul/browse/" +
-    encodeURIComponent(`${BASE_URL}/claim/${id}`);
-
-  res.redirect(302, phantomUrl);
+  // compatibilidad por si alguien abre un link viejo
+  res.redirect(302, `${BASE_URL}/claim-page/${req.params.id}`);
 });
 
 /* ================= CLAIM PAGE ================= */
