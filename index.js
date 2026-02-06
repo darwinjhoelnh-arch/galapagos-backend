@@ -153,15 +153,20 @@ app.get("/admin/download/:product", async (req, res) => {
 /* ================= CLAIM (NO TOCAR) ================= */
 
 app.get("/claim/:id", async (req, res) => {
-  const { rows } = await pool.query(
-    "SELECT product_name,value_usd FROM qrs WHERE id=$1",
-    [req.params.id]
-  );
-  if (!rows.length) return res.send("QR inválido");
+  const { id } = req.params;
 
-  const product = rows[0].product_name;
-  const rewardUsd = Number(rows[0].value_usd) * 0.01;
+  // URL REAL de la página de reclamo
+  const claimUrl = `https://galapagos-backend.onrender.com/claim-page/${id}`;
 
+  // Encode para Phantom
+  const encoded = encodeURIComponent(claimUrl);
+
+  // Deep link Phantom
+  const phantomUrl = `https://phantom.app/ul/browse/${encoded}`;
+
+  // Redirección directa
+  return res.redirect(302, phantomUrl);
+});
   res.send(`
 <!DOCTYPE html>
 <html>
