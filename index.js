@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import http from "http";
 import pkg from "pg";
+import fetch from "node-fetch";
 import { v4 as uuidv4 } from "uuid";
 
 const { Pool } = pkg;
@@ -9,59 +10,28 @@ const { Pool } = pkg;
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 /* ===============================
-   CONFIG
+   DATABASE
 ================================ */
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "admin123";
-
-/* ===============================
-   INIT DB (AUTO)
-================================ */
-async function initDB() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS products (
-      id SERIAL PRIMARY KEY,
-      name TEXT NOT NULL,
-      price_usd NUMERIC NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS qrs (
-      id UUID PRIMARY KEY,
-      product_id INTEGER REFERENCES products(id),
-      value_usd NUMERIC NOT NULL,
-      used BOOLEAN DEFAULT false,
-      wallet TEXT,
-      used_at TIMESTAMP,
-      created_at TIMESTAMP DEFAULT NOW()
-    );
-  `);
-  console.log("📦 DB lista");
-}
-
-await initDB();
-
 /* ===============================
    HEALTH
 ================================ */
-app.get("/", (req, res) => {
-  res.send("OK");
-});
+app.get("/", (_, res) => res.send("Galápagos Backend OK"));
 
 /* ===============================
-   QR REDIRECT → PHANTOM
+   QR → PHANTOM REDIRECT
 ================================ */
 app.get("/r/:id", (req, res) => {
-  const url = `https://galapagos-backend.onrender.com/claim/${req.params.id}`;
-  const phantom =
-    "https://phantom.app/ul/browse/" + encodeURIComponent(url);
-  res.redirect(302, phantom);
+  const url = `https://phantom.app/ul/browse/${encodeURIComponent(
+    `https://galapagos-backend.onrender.com/claim/${req.params.id}`
+  )}`;
+  res.redirect(302, url);
 });
 
 /* ===============================
@@ -70,59 +40,51 @@ app.get("/r/:id", (req, res) => {
 app.get("/claim/:id", async (req, res) => {
   const { id } = req.params;
 
-  const qrRes = await pool.query(
+  const { rows } = await pool.query(
     "SELECT * FROM qrs WHERE id=$1",
     [id]
   );
 
-  if (!qrRes.rows.length) {
-    return res.send("QR no existe");
-  }
+  if (!rows.length) return res.send("QR no existe");
+  if (rows[0].used) return res.send("QR ya utilizado");
 
-  const qr = qrRes.rows[0];
-  if (qr.used) {
-    return res.send("Este QR ya fue usado");
-  }
-
-  const rewardUsd = qr.value_usd * 0.01;
+  const qr = rows[0];
 
   res.send(`
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Galápagos Token</title>
+<meta charset="utf-8"/>
+<title>Reclamar Galápagos Token</title>
 <style>
-body{
-  background:#020b08;
-  font-family:Arial;
-  color:#eafff5;
+body {
+  background: radial-gradient(circle, #0a1f1a, #000);
+  font-family: Arial;
+  color: #e6fff3;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:100vh;
 }
-.card{
-  max-width:420px;
-  margin:40px auto;
-  background:#041a12;
+.card {
+  background:#031e16;
+  padding:30px;
   border-radius:20px;
-  padding:24px;
+  width:360px;
   text-align:center;
-  box-shadow:0 0 30px #0aff9d55;
+  box-shadow:0 0 40px #00ffb3;
 }
-.logo{
+.logo {
   width:120px;
-  margin-bottom:10px;
+  margin-bottom:20px;
 }
-.amount{
-  font-size:26px;
-  color:#00ffb3;
-  margin:15px 0;
-}
-button{
-  background:#0aff9d;
+button {
+  background:#00ffb3;
   border:none;
   padding:14px;
   width:100%;
   border-radius:12px;
-  font-size:18px;
+  font-size:16px;
   cursor:pointer;
 }
 </style>
@@ -130,28 +92,27 @@ button{
 <body>
 <div class="card">
 <img class="logo" src="https://xtradeacademy.net/wp-content/uploads/2026/01/Black-White-Minimalist-Modern-Hiring-Designer-Information-Instagram-Media-Post-.png"/>
-<h2>GALÁPAGOS TOKEN</h2>
-<p>Recompensa ecológica</p>
-<div class="amount">$${rewardUsd.toFixed(2)} USD en tokens</div>
-<button onclick="claim()">Firmar y reclamar</button>
-</div>
+<h2>Galápagos Token</h2>
+<p>Producto: <b>${qr.product_name}</b></p>
+<p>Valor: $${qr.product_price_usd}</p>
+<p>Recompensa: <b>${qr.claim_percent}%</b></p>
+
+<button onclick="firmar()">Firmar y reclamar</button>
 
 <script>
-async function claim(){
-  if(!window.solana){
-    alert("Abre esto dentro de Phantom");
-    return;
-  }
+async function firmar(){
+  const provider = window.solana;
+  if(!provider){ alert("Abre con Phantom"); return; }
 
-  await window.solana.connect();
-  const msg = new TextEncoder().encode("Reclamo Galápagos ${id}");
-  await window.solana.signMessage(msg,"utf8");
+  const msg = new TextEncoder().encode("Galápagos QR ${id}");
+  const signed = await provider.signMessage(msg, "utf8");
 
-  const r = await fetch("/claim/${id}/sign",{
+  const r = await fetch("/claim/${id}/sign", {
     method:"POST",
     headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({
-      wallet: window.solana.publicKey.toString()
+    body: JSON.stringify({
+      wallet: provider.publicKey.toString(),
+      signature: Array.from(signed.signature)
     })
   });
 
@@ -159,210 +120,69 @@ async function claim(){
   alert(d.mensaje);
 }
 </script>
+</div>
 </body>
 </html>
 `);
 });
 
 /* ===============================
-   CONFIRM CLAIM
+   CLAIM SIGN
 ================================ */
 app.post("/claim/:id/sign", async (req, res) => {
   const { id } = req.params;
   const { wallet } = req.body;
 
-  const result = await pool.query(
-    "UPDATE qrs SET used=true, wallet=$1, used_at=NOW() WHERE id=$2 AND used=false",
-    [wallet, id]
+  const qrRes = await pool.query(
+    "SELECT * FROM qrs WHERE id=$1 AND used=false",
+    [id]
   );
 
-  if (!result.rowCount) {
-    return res.json({ mensaje: "QR inválido o ya usado" });
-  }
+  if (!qrRes.rows.length)
+    return res.json({ mensaje: "QR inválido o usado" });
+
+  const qr = qrRes.rows[0];
+
+  // 🔥 Precio real del token (ejemplo con Jupiter API)
+  const priceRes = await fetch(
+    "https://price.jup.ag/v4/price?ids=6Z17TYRxJtPvHSGh7s6wtcERgxHGv37sBq6B9Sd1pump"
+  );
+  const priceData = await priceRes.json();
+  const tokenPrice = priceData.data[Object.keys(priceData.data)[0]].price;
+
+  const rewardUSD = qr.product_price_usd * (qr.claim_percent / 100);
+  const tokens = rewardUSD / tokenPrice;
+
+  await pool.query(
+    "UPDATE qrs SET used=true WHERE id=$1",
+    [id]
+  );
+
+  await pool.query(
+    "INSERT INTO claims VALUES ($1,$2,$3,$4,$5,NOW())",
+    [uuidv4(), id, wallet, tokens, null]
+  );
 
   res.json({
-    mensaje: "🎉 Felicidades por ser parte de Galápagos Token 🐢🌱"
+    mensaje: "🎉 Felicidades por ser parte de Galápagos Token 🐢",
+    tokens: tokens.toFixed(6)
   });
 });
 
 /* ===============================
-   ADMIN AUTH
-================================ */
-function adminAuth(req, res, next) {
-  if (req.query.token !== ADMIN_TOKEN) {
-    return res.status(401).send("No autorizado");
-  }
-  next();
-}
-
-/* ===============================
    ADMIN DASHBOARD
 ================================ */
-app.get("/admin", adminAuth, async (req, res) => {
-  const products = await pool.query("SELECT * FROM products");
-  const qrs = await pool.query("SELECT * FROM qrs ORDER BY created_at DESC");
+app.get("/admin", async (req, res) => {
+  if (req.query.token !== process.env.ADMIN_TOKEN)
+    return res.send("No autorizado");
 
-  res.send(`
-<html>
-<head>
-<style>
-body{background:#020b08;color:#eafff5;font-family:Arial}
-.card{background:#041a12;padding:20px;margin:20px;border-radius:12px}
-table{width:100%;border-collapse:collapse}
-td,th{padding:8px;border-bottom:1px solid #0aff9d33}
-button{background:#0aff9d;border:none;padding:8px;border-radius:6px}
-</style>
-</head>
-<body>
+  const { rows } = await pool.query("SELECT * FROM qrs ORDER BY created_at DESC");
 
-<div class="card">
-<h2>Crear producto</h2>
-<form method="POST" action="/admin/product?token=${req.query.token}">
-<input name="name" placeholder="Nombre">
-<input name="price" placeholder="Precio USD">
-<button>Crear</button>
-</form>
-</div>
-
-<div class="card">
-<h2>Generar QRs</h2>
-<form method="POST" action="/admin/qrs?token=${req.query.token}">
-<input name="product_id" placeholder="ID producto">
-<input name="qty" placeholder="Cantidad">
-<button>Generar</button>
-</form>
-</div>
-
-<div class="card">
-<h2>QRs</h2>
-<table>
-<tr><th>ID</th><th>USD</th><th>Estado</th><th>Wallet</th></tr>
-${qrs.rows.map(q=>`
-<tr>
-<td>${q.id}</td>
-<td>$${q.value_usd}</td>
-<td>${q.used?"Usado":"Libre"}</td>
-<td>${q.wallet||"-"}</td>
-</tr>`).join("")}
-</table>
-</div>
-
-</body>
-</html>
-`);
-});
-
-/* ===============================
-   ADMIN ACTIONS
-================================ */
-app.post("/admin/product", adminAuth, async (req,res)=>{
-  await pool.query(
-    "INSERT INTO products(name,price_usd) VALUES($1,$2)",
-    [req.body.name, req.body.price]
-  );
-  res.redirect("/admin?token="+req.query.token);
-});
-
-app.post("/admin/qrs", adminAuth, async (req,res)=>{
-  const prod = await pool.query(
-    "SELECT * FROM products WHERE id=$1",
-    [req.body.product_id]
-  );
-
-  if(!prod.rows.length){
-    return res.send("Producto no existe");
-  }
-
-  for(let i=0;i<req.body.qty;i++){
-    await pool.query(
-      "INSERT INTO qrs(id,product_id,value_usd) VALUES($1,$2,$3)",
-      [uuidv4(), req.body.product_id, prod.rows[0].price_usd]
-    );
-  }
-
-  res.redirect("/admin?token="+req.query.token);
-});
-/* ===============================
-   ADMIN DASHBOARD (simple)
-   /admin?token=galapagos_admin_2026
-================================ */
-app.get("/admin", (req, res) => {
-  const { token } = req.query;
-
-  if (token !== "galapagos_admin_2026") {
-    return res.status(403).send("Acceso denegado");
-  }
-
-  res.send(`
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <title>Galápagos Admin</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #050b0a;
-      color: #e6fff4;
-    }
-    .container {
-      max-width: 900px;
-      margin: 40px auto;
-      padding: 30px;
-      background: linear-gradient(180deg, #071915, #020807);
-      border-radius: 20px;
-      box-shadow: 0 0 40px rgba(0,255,170,0.15);
-    }
-    h1 {
-      color: #00ffb3;
-      text-align: center;
-    }
-    .card {
-      background: #071f1a;
-      padding: 20px;
-      border-radius: 12px;
-      margin-top: 20px;
-      border: 1px solid #0aff9d33;
-    }
-    .badge {
-      display: inline-block;
-      padding: 6px 12px;
-      background: #00ffb3;
-      color: #003322;
-      border-radius: 20px;
-      font-weight: bold;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>🐢 Galápagos Token — Admin</h1>
-
-    <div class="card">
-      <p><strong>Estado:</strong> <span class="badge">ONLINE</span></p>
-      <p>Backend activo y listo para gestionar QR, reclamos y recompensas.</p>
-    </div>
-
-    <div class="card">
-      <h3>Próximos módulos</h3>
-      <ul>
-        <li>Generación masiva de QR</li>
-        <li>Dashboard de reclamos</li>
-        <li>Control de productos y valores</li>
-        <li>Historial on-chain</li>
-      </ul>
-    </div>
-  </div>
-</body>
-</html>
-  `);
+  res.send(`<pre>${JSON.stringify(rows,null,2)}</pre>`);
 });
 
 /* ===============================
    SERVER
 ================================ */
 const PORT = process.env.PORT || 8080;
-http.createServer(app).listen(PORT, "0.0.0.0", () => {
-  console.log("🐢 Galápagos Backend LIVE");
-});
+http.createServer(app).listen(PORT, "0.0.0.0");
