@@ -286,6 +286,44 @@ app.get("/admin/csv", async (req, res) => {
   res.setHeader("Content-Disposition","attachment; filename=galapagos_qrs.csv");
   res.send(csv);
 });
+<hr style="border-color:#0aff9d22;margin:16px 0"/>
+
+<form method="POST" action="/admin/generate?token=${req.query.token}">
+  <label>Cantidad de QRs:</label>
+  <input name="qty" type="number" min="1" max="5000" required
+         style="padding:8px;border-radius:6px;border:none;margin-right:10px"/>
+
+  <label>Valor USD:</label>
+  <input name="value_usd" type="number" step="0.01" required
+         style="padding:8px;border-radius:6px;border:none;margin-right:10px"/>
+
+  <button type="submit">➕ Generar QRs</button>
+</form>
+app.post("/admin/generate", async (req, res) => {
+  if (req.query.token !== process.env.ADMIN_TOKEN) {
+    return res.status(403).send("No autorizado");
+  }
+
+  const { qty, value_usd } = req.body;
+
+  const cantidad = parseInt(qty);
+  const valor = parseFloat(value_usd);
+
+  if (!cantidad || !valor || cantidad <= 0) {
+    return res.send("Datos inválidos");
+  }
+
+  // genera QRs en lote
+  const insertQuery = `
+    INSERT INTO qrs (id, value_usd)
+    SELECT gen_random_uuid(), $1
+    FROM generate_series(1, $2);
+  `;
+
+  await pool.query(insertQuery, [valor, cantidad]);
+
+  res.redirect("/admin?token=" + req.query.token);
+});
 
 
 /* ===============================
