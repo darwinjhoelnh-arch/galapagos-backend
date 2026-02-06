@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Galápagos Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      background: radial-gradient(circle at top, #0b3d2e, #000);
+      color: #eafff4;
+    }
+    header {
+      text-align: center;
+      padding: 30px 20px;
+    }
+    header img {
+      width: 120px;
+      margin-bottom: 10px;
+    }
+    h1 {
+      color: #39ffb4;
+      margin: 0;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 20px;
+    }
+    .card {
+      background: rgba(0,0,0,0.6);
+      border: 1px solid #1cff9a44;
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    button {
+      background: linear-gradient(135deg,#1cff9a,#00c389);
+      border: none;
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      padding: 8px 0;
+      border-bottom: 1px solid #ffffff22;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <img src="https://xtradeacademy.net/wp-content/uploads/2026/01/Black-White-Minimalist-Modern-Hiring-Designer-Information-Instagram-Media-Post-.png">
+  <h1>Galápagos Token Admin</h1>
+  <p>Gestión de QR & Recompensas</p>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <h2>Generar QRs</h2>
+    <button onclick="generar()">Generar nuevos códigos</button>
+  </div>
+
+  <div class="card">
+    <h2>Códigos existentes</h2>
+    <ul id="lista"></ul>
+  </div>
+
+  <div class="card">
+    <h2>Descargas</h2>
+    <button onclick="descargar()">Descargar ZIP de QRs</button>
+  </div>
+
+</div>
+
+<script>
+async function cargar() {
+  const res = await fetch('/admin/data');
+  const data = await res.json();
+  const ul = document.getElementById('lista');
+  ul.innerHTML = '';
+  data.forEach(q => {
+    const li = document.createElement('li');
+    li.textContent = q.code + ' - $' + q.value_usd;
+    ul.appendChild(li);
+  });
+}
+
+async function generar() {
+  await fetch('/admin/generate', { method: 'POST' });
+  cargar();
+}
+
+function descargar() {
+  window.location.href = '/admin/download';
+}
+
+cargar();
+</script>
+
+</body>
+</html>
