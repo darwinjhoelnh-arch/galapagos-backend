@@ -132,12 +132,23 @@ app.get("/admin/download/:product", async (req, res) => {
   archive.finalize();
 });
 
-/* ================= CLAIM REDIRECT ================= */
+/* ================= CLAIM REDIRECT (FIX LOOP) ================= */
 
 app.get("/claim/:id", (req, res) => {
-  const url = `${BASE_URL}/claim-page/${req.params.id}`;
-  const phantom = `https://phantom.app/ul/browse/${encodeURIComponent(url)}`;
-  res.redirect(302, phantom);
+  const { id } = req.params;
+  const ua = (req.headers["user-agent"] || "").toLowerCase();
+
+  // Si YA estamos dentro de Phantom → ir a la página real
+  if (ua.includes("phantom")) {
+    return res.redirect(302, `${BASE_URL}/claim-page/${id}`);
+  }
+
+  // Si NO → abrir Phantom
+  const phantomUrl =
+    "https://phantom.app/ul/browse/" +
+    encodeURIComponent(`${BASE_URL}/claim/${id}`);
+
+  res.redirect(302, phantomUrl);
 });
 
 /* ================= CLAIM PAGE ================= */
