@@ -33,15 +33,17 @@ app.get("/admin", async (req, res) => {
   }
 
   const { rows } = await pool.query(`
-    SELECT 
-      product_name,
-      batch_id,
-      value_usd,
-      COUNT(*) AS total,
-      MAX(created_at) AS created_at
-    FROM qrs
-    GROUP BY product_name, batch_id, value_usd
-    ORDER BY created_at DESC
+   SELECT 
+  product_name,
+  batch_id,
+  value_usd,
+  COUNT(*) AS total,
+  MAX(created_at) AS created_at
+FROM qrs
+WHERE batch_id IS NOT NULL
+GROUP BY product_name, batch_id, value_usd
+ORDER BY created_at DESC
+
   `);
 
   res.send(`
@@ -135,33 +137,39 @@ async function generate(){
    GENERAR QRs
 ====================== */
 app.post("/admin/generate", async (req, res) => {
-  if (req.query.token !== ADMIN_TOKEN) {
-    return res.status(401).json({ error: "Unauthorized" });
+  try {
+    const { product_name, value_usd, quantity } = req.body;
+
+    if (!product_name || !value_usd || !quantity) {
+      return res.status(400).json({ error: "Datos incompletos" });
+    }
+
+    const batchId = crypto.randomUUID();
+
+    for (let i = 0; i < quantity; i++) {
+      const id = crypto.randomUUID();
+
+      await pool.query(
+        `INSERT INTO qrs (id, product_name, value_usd, batch_id)
+         VALUES ($1, $2, $3, $4)`,
+        [id, product_name, value_usd, batchId]
+      );
+    }
+
+    res.json({ success: true, batchId });
+
+  } catch (err) {
+    console.error("ERROR GENERANDO QRS:", err);
+    res.status(500).json({ error: "Error generando QRs" });
   }
-
-  const { product_name, value_usd, quantity } = req.body;
-  if (!product_name || !value_usd || !quantity) {
-    return res.status(400).json({ error: "Datos incompletos" });
-  }
-
-  const batchId = crypto.randomUUID();
-
-  for (let i = 0; i < quantity; i++) {
-    await pool.query(
-      `
-      INSERT INTO qrs (product_name, value_usd, batch_id)
-      VALUES ($1, $2, $3)
-      `,
-      [product_name, value_usd, batchId]
-    );
-  }
-
-  res.json({ success: true, batch_id: batchId });
 });
 
 /* ======================
    DESCARGAR ZIP
 ====================== */
+if (!req.params.batchId || req.params.batchId === "null") {
+  return res.status(400).send("Batch inválido");
+}
 app.get("/admin/download/:batchId", async (req, res) => {
   if (req.query.token !== ADMIN_TOKEN) {
     return res.status(401).send("Unauthorized");
