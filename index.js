@@ -2,36 +2,40 @@ import express from "express";
 import cors from "cors";
 import http from "http";
 import pkg from "pg";
-import fetch from "node-fetch";
-import { v4 as uuidv4 } from "uuid";
 
 const { Pool } = pkg;
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 /* ===============================
-   DATABASE
+   CONFIGURACIÓN
 ================================ */
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
-/* ===============================
-   HEALTH
-================================ */
-app.get("/", (_, res) => res.send("Galápagos Backend OK"));
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 
 /* ===============================
-   QR → PHANTOM REDIRECT
+   HEALTH CHECK
+================================ */
+app.get("/", (req, res) => {
+  res.send("Galapagos Backend OK");
+});
+
+/* ===============================
+   REDIRECT QR → PHANTOM
 ================================ */
 app.get("/r/:id", (req, res) => {
-  const url = `https://phantom.app/ul/browse/${encodeURIComponent(
-    `https://galapagos-backend.onrender.com/claim/${req.params.id}`
-  )}`;
-  res.redirect(302, url);
+  const claimUrl = `https://galapagos-backend.onrender.com/claim/${req.params.id}`;
+  const phantomUrl =
+    "https://phantom.app/ul/browse/" + encodeURIComponent(claimUrl);
+
+  res.redirect(302, phantomUrl);
 });
 
 /* ===============================
@@ -40,15 +44,22 @@ app.get("/r/:id", (req, res) => {
 app.get("/claim/:id", async (req, res) => {
   const { id } = req.params;
 
-  const { rows } = await pool.query(
+  const qrRes = await pool.query(
     "SELECT * FROM qrs WHERE id=$1",
     [id]
   );
 
-  if (!rows.length) return res.send("QR no existe");
-  if (rows[0].used) return res.send("QR ya utilizado");
+  if (!qrRes.rows.length) {
+    return res.send("QR no existe");
+  }
 
-  const qr = rows[0];
+  const qr = qrRes.rows[0];
+
+  if (qr.used) {
+    return res.send("Este QR ya fue usado");
+  }
+
+  const rewardUsd = qr.value_usd * 0.01;
 
   res.send(`
 <!DOCTYPE html>
@@ -57,34 +68,36 @@ app.get("/claim/:id", async (req, res) => {
 <meta charset="utf-8"/>
 <title>Reclamar Galápagos Token</title>
 <style>
-body {
-  background: radial-gradient(circle, #0a1f1a, #000);
-  font-family: Arial;
-  color: #e6fff3;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  height:100vh;
+body{
+  background:#020b08;
+  font-family:Arial;
+  color:#eafff5;
 }
-.card {
-  background:#031e16;
-  padding:30px;
+.card{
+  max-width:420px;
+  margin:40px auto;
+  background:#041a12;
   border-radius:20px;
-  width:360px;
+  padding:24px;
   text-align:center;
-  box-shadow:0 0 40px #00ffb3;
+  box-shadow:0 0 30px #0aff9d55;
 }
-.logo {
+.logo{
   width:120px;
-  margin-bottom:20px;
+  margin-bottom:10px;
 }
-button {
-  background:#00ffb3;
+.amount{
+  font-size:26px;
+  color:#00ffb3;
+  margin:15px 0;
+}
+button{
+  background:#0aff9d;
   border:none;
   padding:14px;
   width:100%;
   border-radius:12px;
-  font-size:16px;
+  font-size:18px;
   cursor:pointer;
 }
 </style>
@@ -92,27 +105,28 @@ button {
 <body>
 <div class="card">
 <img class="logo" src="https://xtradeacademy.net/wp-content/uploads/2026/01/Black-White-Minimalist-Modern-Hiring-Designer-Information-Instagram-Media-Post-.png"/>
-<h2>Galápagos Token</h2>
-<p>Producto: <b>${qr.product_name}</b></p>
-<p>Valor: $${qr.product_price_usd}</p>
-<p>Recompensa: <b>${qr.claim_percent}%</b></p>
-
-<button onclick="firmar()">Firmar y reclamar</button>
+<h2>GALÁPAGOS TOKEN</h2>
+<p>Recompensa ecológica</p>
+<div class="amount">$${rewardUsd.toFixed(2)} USD en tokens</div>
+<button onclick="claim()">Firmar y reclamar</button>
+</div>
 
 <script>
-async function firmar(){
-  const provider = window.solana;
-  if(!provider){ alert("Abre con Phantom"); return; }
+async function claim(){
+  if(!window.solana){
+    alert("Abre este enlace dentro de Phantom Wallet");
+    return;
+  }
 
-  const msg = new TextEncoder().encode("Galápagos QR ${id}");
-  const signed = await provider.signMessage(msg, "utf8");
+  await window.solana.connect();
+  const msg = new TextEncoder().encode("Reclamo Galápagos QR ${id}");
+  await window.solana.signMessage(msg,"utf8");
 
-  const r = await fetch("/claim/${id}/sign", {
+  const r = await fetch("/claim/${id}/sign",{
     method:"POST",
     headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({
-      wallet: provider.publicKey.toString(),
-      signature: Array.from(signed.signature)
+    body:JSON.stringify({
+      wallet: window.solana.publicKey.toString()
     })
   });
 
@@ -120,60 +134,37 @@ async function firmar(){
   alert(d.mensaje);
 }
 </script>
-</div>
 </body>
 </html>
 `);
 });
 
 /* ===============================
-   CLAIM SIGN
+   CONFIRM CLAIM
 ================================ */
 app.post("/claim/:id/sign", async (req, res) => {
   const { id } = req.params;
   const { wallet } = req.body;
 
-  const qrRes = await pool.query(
-    "SELECT * FROM qrs WHERE id=$1 AND used=false",
-    [id]
+  const result = await pool.query(
+    "UPDATE qrs SET used=true, wallet=$1, claimed_at=NOW() WHERE id=$2 AND used=false",
+    [wallet, id]
   );
 
-  if (!qrRes.rows.length)
-    return res.json({ mensaje: "QR inválido o usado" });
-
-  const qr = qrRes.rows[0];
-
-  // 🔥 Precio real del token (ejemplo con Jupiter API)
-  const priceRes = await fetch(
-    "https://price.jup.ag/v4/price?ids=6Z17TYRxJtPvHSGh7s6wtcERgxHGv37sBq6B9Sd1pump"
-  );
-  const priceData = await priceRes.json();
-  const tokenPrice = priceData.data[Object.keys(priceData.data)[0]].price;
-
-  const rewardUSD = qr.product_price_usd * (qr.claim_percent / 100);
-  const tokens = rewardUSD / tokenPrice;
-
-  await pool.query(
-    "UPDATE qrs SET used=true WHERE id=$1",
-    [id]
-  );
-
-  await pool.query(
-    "INSERT INTO claims VALUES ($1,$2,$3,$4,$5,NOW())",
-    [uuidv4(), id, wallet, tokens, null]
-  );
+  if (!result.rowCount) {
+    return res.json({ mensaje: "QR inválido o ya usado" });
+  }
 
   res.json({
-    mensaje: "🎉 Felicidades por ser parte de Galápagos Token 🐢",
-    tokens: tokens.toFixed(6)
+    mensaje: "🎉 Felicidades por ser parte de Galápagos Token 🐢🌱"
   });
 });
 
 /* ===============================
-   ADMIN DASHBOARD
+   ADMIN DASHBOARD PRO
 ================================ */
 app.get("/admin", async (req, res) => {
-  if (req.query.token !== process.env.ADMIN_TOKEN) {
+  if (req.query.token !== ADMIN_TOKEN) {
     return res.status(403).send("Acceso denegado");
   }
 
@@ -183,19 +174,18 @@ app.get("/admin", async (req, res) => {
       q.value_usd,
       q.used,
       q.created_at,
-      c.wallet,
-      c.created_at AS claimed_at
+      q.wallet,
+      q.claimed_at
     FROM qrs q
-    LEFT JOIN claims c ON c.qr_id = q.id
     ORDER BY q.created_at DESC
   `);
 
   const stats = await pool.query(`
     SELECT
       COUNT(*) AS total,
-      COUNT(*) FILTER (WHERE used = true) AS usados,
-      COUNT(*) FILTER (WHERE used = false) AS libres,
-      COALESCE(SUM(value_usd) FILTER (WHERE used = true),0) AS total_usd
+      COUNT(*) FILTER (WHERE used=true) AS usados,
+      COUNT(*) FILTER (WHERE used=false) AS libres,
+      COALESCE(SUM(value_usd) FILTER (WHERE used=true),0) AS total_usd
     FROM qrs
   `);
 
@@ -205,7 +195,7 @@ app.get("/admin", async (req, res) => {
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8"/>
 <title>Galápagos Admin</title>
 <style>
 body{background:#050b0a;color:#eafff5;font-family:Arial}
@@ -219,10 +209,12 @@ th{color:#0aff9d}
 .used{color:#ff6b6b;font-weight:bold}
 .free{color:#00ffb3;font-weight:bold}
 button{background:#00ffb3;border:none;padding:10px;border-radius:8px;cursor:pointer}
+input{padding:8px;border-radius:6px;border:none;margin-right:10px}
 </style>
 </head>
 <body>
 <div class="container">
+
 <h1>🐢 Galápagos Token — Admin</h1>
 
 <div class="card">
@@ -231,9 +223,20 @@ button{background:#00ffb3;border:none;padding:10px;border-radius:8px;cursor:poin
   <div class="stat">Libres: <b>${s.libres}</b></div>
   <div class="stat">USD reclamado: <b>$${Number(s.total_usd).toFixed(2)}</b></div>
   <br><br>
+
   <a href="/admin/csv?token=${req.query.token}">
     <button>⬇ Descargar CSV</button>
   </a>
+
+  <hr style="border-color:#0aff9d22;margin:16px 0"/>
+
+  <form method="POST" action="/admin/generate?token=${req.query.token}">
+    <label>Cantidad:</label>
+    <input name="qty" type="number" min="1" required>
+    <label>Valor USD:</label>
+    <input name="value_usd" type="number" step="0.01" required>
+    <button type="submit">➕ Generar QRs</button>
+  </form>
 </div>
 
 <div class="card">
@@ -259,22 +262,18 @@ ${qrs.rows.map(r=>`
 `);
 });
 
+/* ===============================
+   ADMIN CSV
+================================ */
 app.get("/admin/csv", async (req, res) => {
-  if (req.query.token !== process.env.ADMIN_TOKEN) {
+  if (req.query.token !== ADMIN_TOKEN) {
     return res.status(403).send("No autorizado");
   }
 
   const { rows } = await pool.query(`
-    SELECT
-      q.id,
-      q.value_usd,
-      q.used,
-      q.created_at,
-      c.wallet,
-      c.created_at AS claimed_at
-    FROM qrs q
-    LEFT JOIN claims c ON c.qr_id = q.id
-    ORDER BY q.created_at DESC
+    SELECT id,value_usd,used,wallet,created_at,claimed_at
+    FROM qrs
+    ORDER BY created_at DESC
   `);
 
   let csv = "id,value_usd,used,wallet,created_at,claimed_at\n";
@@ -286,48 +285,38 @@ app.get("/admin/csv", async (req, res) => {
   res.setHeader("Content-Disposition","attachment; filename=galapagos_qrs.csv");
   res.send(csv);
 });
-<hr style="border-color:#0aff9d22;margin:16px 0"/>
 
-<form method="POST" action="/admin/generate?token=${req.query.token}">
-  <label>Cantidad de QRs:</label>
-  <input name="qty" type="number" min="1" max="5000" required
-         style="padding:8px;border-radius:6px;border:none;margin-right:10px"/>
-
-  <label>Valor USD:</label>
-  <input name="value_usd" type="number" step="0.01" required
-         style="padding:8px;border-radius:6px;border:none;margin-right:10px"/>
-
-  <button type="submit">➕ Generar QRs</button>
-</form>
+/* ===============================
+   ADMIN GENERATE QRS
+================================ */
 app.post("/admin/generate", async (req, res) => {
-  if (req.query.token !== process.env.ADMIN_TOKEN) {
+  if (req.query.token !== ADMIN_TOKEN) {
     return res.status(403).send("No autorizado");
   }
 
-  const { qty, value_usd } = req.body;
+  const qty = parseInt(req.body.qty);
+  const value = parseFloat(req.body.value_usd);
 
-  const cantidad = parseInt(qty);
-  const valor = parseFloat(value_usd);
-
-  if (!cantidad || !valor || cantidad <= 0) {
+  if (!qty || !value) {
     return res.send("Datos inválidos");
   }
 
-  // genera QRs en lote
-  const insertQuery = `
+  await pool.query(
+    `
     INSERT INTO qrs (id, value_usd)
     SELECT gen_random_uuid(), $1
-    FROM generate_series(1, $2);
-  `;
-
-  await pool.query(insertQuery, [valor, cantidad]);
+    FROM generate_series(1, $2)
+    `,
+    [value, qty]
+  );
 
   res.redirect("/admin?token=" + req.query.token);
 });
-
 
 /* ===============================
    SERVER
 ================================ */
 const PORT = process.env.PORT || 8080;
-http.createServer(app).listen(PORT, "0.0.0.0");
+http.createServer(app).listen(PORT, "0.0.0.0", () => {
+  console.log("🐢 Galápagos Backend LIVE");
+});
