@@ -13,17 +13,14 @@ const { Pool } = pg;
 const PORT = process.env.PORT || 3000;
 const BASE_URL = process.env.BASE_URL;
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
-
-// MINT REAL
-const TOKEN_MINT =
-  "6Z17TYRxJtPvHSGh7s6wtcERgxHGv37sBq6B9Sd1pump";
+const TOKEN_MINT = "6Z17TYRxJtPvHSGh7s6wtcERgxHGv37sBq6B9Sd1pump";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
-/* ================= ADMIN (NO TOCAR) ================= */
+/* ================= ADMIN DASHBOARD ================= */
 
 app.get("/admin", async (req, res) => {
   if (req.query.token !== ADMIN_TOKEN) return res.send("Unauthorized");
@@ -36,9 +33,78 @@ app.get("/admin", async (req, res) => {
     FROM qrs
   `);
 
+  const products = await pool.query(`
+    SELECT product_name, COUNT(*) qty
+    FROM qrs
+    GROUP BY product_name
+    ORDER BY product_name
+  `);
+
   res.send(`
-<h1>Admin OK</h1>
-<p>Total: ${stats.rows[0].total}</p>
+<!DOCTYPE html>
+<html>
+<head>
+<title>Galápagos Admin</title>
+<style>
+body{
+background:#021b14;
+color:#d0fff0;
+font-family:Arial;
+padding:40px;
+}
+.card{
+background:#03261b;
+padding:20px;
+border-radius:16px;
+margin-bottom:20px;
+}
+button,input{
+padding:10px;
+border-radius:8px;
+border:none;
+margin:4px;
+}
+button{
+background:#00ffb3;
+font-weight:bold;
+}
+</style>
+</head>
+<body>
+
+<h1>🌱 Galápagos Token Admin</h1>
+
+<div class="card">
+<b>Total:</b> ${stats.rows[0].total} |
+<b>Activos:</b> ${stats.rows[0].active} |
+<b>Reclamados:</b> ${stats.rows[0].claimed}
+</div>
+
+<div class="card">
+<h3>Generar QRs</h3>
+<form action="/admin/generate">
+<input type="hidden" name="token" value="${ADMIN_TOKEN}">
+<input name="product" placeholder="Producto" required>
+<input name="usd" placeholder="USD" required>
+<input name="qty" placeholder="Cantidad" required>
+<button>Generar</button>
+</form>
+</div>
+
+<div class="card">
+<h3>Descargas por producto</h3>
+${products.rows.map(p=>`
+<div>
+<b>${p.product_name}</b> (${p.qty})
+<a href="/admin/download/${p.product_name}?token=${ADMIN_TOKEN}">
+<button>Descargar ZIP</button>
+</a>
+</div>
+`).join("")}
+</div>
+
+</body>
+</html>
 `);
 });
 
@@ -74,17 +140,17 @@ app.get("/admin/download/:product", async (req, res) => {
   archive.pipe(res);
 
   for (const qr of rows) {
-    const phantomUrl =
+    const url =
       "https://phantom.app/ul/browse/" +
       encodeURIComponent(`${BASE_URL}/claim/${qr.id}`);
-    const img = await QRCode.toBuffer(phantomUrl);
+    const img = await QRCode.toBuffer(url);
     archive.append(img,{ name:`${qr.id}.png`});
   }
 
   archive.finalize();
 });
 
-/* ================= CLAIM (FIX REAL) ================= */
+/* ================= CLAIM (NO TOCAR) ================= */
 
 app.get("/claim/:id", async (req, res) => {
   const { rows } = await pool.query(
@@ -94,102 +160,53 @@ app.get("/claim/:id", async (req, res) => {
   if (!rows.length) return res.send("QR inválido");
 
   const product = rows[0].product_name;
-  const valueUsd = Number(rows[0].value_usd);
-  const rewardUsd = valueUsd * 0.01;
+  const rewardUsd = Number(rows[0].value_usd) * 0.01;
 
   res.send(`
 <!DOCTYPE html>
 <html>
 <head>
 <meta name="viewport" content="width=device-width"/>
-<title>Galápagos Token</title>
 <style>
-body{
-background:#021b14;
-color:#d0fff0;
-font-family:Arial;
-display:flex;
-justify-content:center;
-align-items:center;
-height:100vh;
-}
-.card{
-background:#03261b;
-padding:24px;
-border-radius:16px;
-text-align:center;
-width:320px;
-}
-button{
-background:#00ffb3;
-border:none;
-padding:12px;
-border-radius:10px;
-width:100%;
-font-weight:bold;
-}
+body{background:#021b14;color:#d0fff0;font-family:Arial;
+display:flex;justify-content:center;align-items:center;height:100vh;}
+.card{background:#03261b;padding:24px;border-radius:16px;width:320px;text-align:center;}
+button{background:#00ffb3;border:none;padding:12px;border-radius:10px;width:100%;}
 </style>
 </head>
 <body>
-
 <div class="card">
 <h2>🌱 Galápagos Token</h2>
-
-<p>Producto: <b>${product}</b></p>
-<p>Valor: $${valueUsd.toFixed(2)} USD</p>
-<p>Recompensa (1%): $${rewardUsd.toFixed(2)} USD</p>
-
-<p><b>Precio token:</b> <span id="price">Cargando…</span></p>
-<p><b>Tokens a recibir:</b> <span id="tokens">—</span></p>
-
+<p>Producto: ${product}</p>
+<p>Recompensa: $${rewardUsd}</p>
+<p>Precio token: <span id="price">...</span></p>
+<p>Tokens: <span id="tokens">...</span></p>
 <button onclick="claim()">Firmar y reclamar</button>
 <p id="status"></p>
 </div>
 
 <script>
-const rewardUsd = ${rewardUsd};
-const mint = "${TOKEN_MINT.toLowerCase()}";
+const mint="${TOKEN_MINT.toLowerCase()}";
+const reward=${rewardUsd};
 
-async function loadPrice(){
-  try{
-    const r = await fetch(
-      "https://api.coingecko.com/api/v3/simple/token_price/solana" +
-      "?contract_addresses=" + mint +
-      "&vs_currencies=usd"
-    );
-    const j = await r.json();
-    const price = j[mint]?.usd;
-
-    if(price){
-      document.getElementById("price").innerText = "$" + price;
-      document.getElementById("tokens").innerText =
-        (rewardUsd / price).toFixed(6);
-    }else{
-      document.getElementById("price").innerText =
-        "No disponible aún";
-    }
-  }catch{
-    document.getElementById("price").innerText =
-      "Error al obtener precio";
-  }
+async function load(){
+const r=await fetch(
+"https://api.coingecko.com/api/v3/simple/token_price/solana?contract_addresses="+mint+"&vs_currencies=usd"
+);
+const j=await r.json();
+const p=j[mint]?.usd;
+if(p){
+document.getElementById("price").innerText="$"+p;
+document.getElementById("tokens").innerText=(reward/p).toFixed(6);
 }
-
+}
 async function claim(){
-  if(!window.solana){
-    document.getElementById("status").innerText =
-      "Abrir desde Phantom";
-    return;
-  }
-  await window.solana.connect();
-  const msg = new TextEncoder().encode("Reclamo Galápagos Token");
-  await window.solana.signMessage(msg);
-  document.getElementById("status").innerText =
-    "🎉 Reclamo firmado";
+await window.solana.connect();
+await window.solana.signMessage(new TextEncoder().encode("Galapagos Claim"));
+document.getElementById("status").innerText="🎉 Reclamado";
 }
-
-loadPrice();
+load();
 </script>
-
 </body>
 </html>
 `);
@@ -197,4 +214,4 @@ loadPrice();
 
 /* ================= START ================= */
 
-app.listen(PORT,()=>console.log("Backend listo"));
+app.listen(PORT,()=>console.log("OK"));
