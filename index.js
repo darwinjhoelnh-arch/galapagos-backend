@@ -25,13 +25,11 @@ const pool = new Pool({
 });
 
 /* =====================================================
-   ADMIN DASHBOARD PRO
+   ADMIN DASHBOARD PRO (NO TOCAR)
 ===================================================== */
 
 app.get("/admin", async (req, res) => {
-  if (req.query.token !== ADMIN_TOKEN) {
-    return res.send("Unauthorized");
-  }
+  if (req.query.token !== ADMIN_TOKEN) return res.send("Unauthorized");
 
   const stats = await pool.query(`
     SELECT
@@ -173,7 +171,7 @@ ${products.rows.map(p=>`
 });
 
 /* =====================================================
-   GENERAR QRS
+   GENERAR QRS (NO TOCAR)
 ===================================================== */
 
 app.get("/admin/generate", async (req, res) => {
@@ -192,7 +190,7 @@ app.get("/admin/generate", async (req, res) => {
 });
 
 /* =====================================================
-   DESCARGAR ZIP (PRODUCTO / NUEVOS)
+   DESCARGAR ZIP (NO TOCAR)
 ===================================================== */
 
 app.get("/admin/download/:product", async (req, res) => {
@@ -241,7 +239,7 @@ app.get("/admin/download/:product", async (req, res) => {
 });
 
 /* =====================================================
-   CLAIM / PHANTOM
+   CLAIM (ÚNICO CAMBIO REAL AQUÍ)
 ===================================================== */
 
 app.get("/claim/:id", async (req, res) => {
@@ -256,7 +254,8 @@ app.get("/claim/:id", async (req, res) => {
   const valueUsd = Number(rows[0].value_usd);
   const rewardUsd = valueUsd * 0.01;
 
-  let price = 0;
+  // ===== FIX REAL DE PRECIO =====
+  let price = null;
   try {
     const r = await fetch(
       "https://api.coingecko.com/api/v3/simple/token_price/solana" +
@@ -264,10 +263,13 @@ app.get("/claim/:id", async (req, res) => {
       "&vs_currencies=usd"
     );
     const j = await r.json();
-    price = j[TOKEN_MINT.toLowerCase()]?.usd || 0;
+    price = j[TOKEN_MINT.toLowerCase()]?.usd ?? null;
   } catch {}
 
-  const tokens = price ? (rewardUsd / price).toFixed(6) : "—";
+  let tokens = null;
+  if (price && price > 0) {
+    tokens = (rewardUsd / price).toFixed(6);
+  }
 
   res.send(`
 <!DOCTYPE html>
@@ -306,10 +308,18 @@ font-weight:bold;
 <body>
 <div class="card">
 <h2>🌱 Galápagos Token</h2>
+
 <p>Valor producto: $${valueUsd.toFixed(2)} USD</p>
 <p>Recompensa (1%): $${rewardUsd.toFixed(2)} USD</p>
-<p>Precio token: $${price || "—"}</p>
-<p><b>Tokens a recibir:</b> ${tokens}</p>
+
+<p><b>Precio del token:</b>
+${price ? `$${price}` : "No disponible aún"}
+</p>
+
+<p><b>Tokens a recibir:</b>
+${tokens ? tokens : "Se calculará al confirmar"}
+</p>
+
 <button onclick="claim()">Firmar y reclamar</button>
 <p id="s"></p>
 </div>
