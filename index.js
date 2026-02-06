@@ -173,12 +173,106 @@ app.post("/claim/:id/sign", async (req, res) => {
    ADMIN DASHBOARD
 ================================ */
 app.get("/admin", async (req, res) => {
-  if (req.query.token !== process.env.ADMIN_TOKEN)
-    return res.send("No autorizado");
+  if (req.query.token !== process.env.ADMIN_TOKEN) {
+    return res.status(403).send("Acceso denegado");
+  }
 
-  const { rows } = await pool.query("SELECT * FROM qrs ORDER BY created_at DESC");
+  const { rows } = await pool.query(`
+    SELECT
+      q.id,
+      q.value_usd,
+      q.used,
+      q.created_at,
+      c.wallet,
+      c.created_at AS claimed_at
+    FROM qrs q
+    LEFT JOIN claims c ON c.qr_id = q.id
+    ORDER BY q.created_at DESC
+  `);
 
-  res.send(`<pre>${JSON.stringify(rows,null,2)}</pre>`);
+  res.send(`
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>Galápagos Admin</title>
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#050b0a;
+  color:#eafff5;
+}
+.container{
+  max-width:1200px;
+  margin:40px auto;
+  padding:20px;
+}
+h1{
+  color:#00ffb3;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:20px;
+}
+th, td{
+  padding:10px;
+  border-bottom:1px solid #0aff9d22;
+  font-size:14px;
+}
+th{
+  text-align:left;
+  color:#0aff9d;
+}
+.used{
+  color:#ff6b6b;
+  font-weight:bold;
+}
+.free{
+  color:#00ffb3;
+  font-weight:bold;
+}
+.badge{
+  padding:4px 10px;
+  border-radius:20px;
+  font-size:12px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🐢 Galápagos Token — Admin Dashboard</h1>
+  <p>Total QRs: <b>${rows.length}</b></p>
+
+  <table>
+    <tr>
+      <th>ID</th>
+      <th>Valor USD</th>
+      <th>Estado</th>
+      <th>Wallet</th>
+      <th>Creado</th>
+      <th>Reclamado</th>
+    </tr>
+
+    ${rows.map(r => `
+      <tr>
+        <td style="font-size:12px">${r.id}</td>
+        <td>$${r.value_usd}</td>
+        <td class="${r.used ? 'used' : 'free'}">
+          ${r.used ? 'USADO' : 'LIBRE'}
+        </td>
+        <td style="font-size:12px">${r.wallet || '-'}</td>
+        <td>${r.created_at ? new Date(r.created_at).toLocaleString() : '-'}</td>
+        <td>${r.claimed_at ? new Date(r.claimed_at).toLocaleString() : '-'}</td>
+      </tr>
+    `).join("")}
+
+  </table>
+</div>
+</body>
+</html>
+  `);
 });
 
 /* ===============================
