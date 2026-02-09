@@ -164,3 +164,7 @@ app.get("/admin/download/:product", admin, async (req, res) => {
 ================================ */
 const PORT = process.env.PORT || 8080;
 http.createServer(app).listen(PORT, "0.0.0.0");
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
