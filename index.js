@@ -109,20 +109,20 @@ app.get("/claim/:id", async (req, res) => {
    ADMIN DASH (BÁSICO)
 ========================= */
 
-app.get("/admin", async (req, res) => {
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+app.use("/admin", (req, res, next) => {
   if (req.query.token !== ADMIN_TOKEN) {
     return res.status(401).send("Unauthorized");
   }
-
-  const total = await pool.query("SELECT COUNT(*) FROM qrs");
-  const claimed = await pool.query("SELECT COUNT(*) FROM qrs WHERE claimed_at IS NOT NULL");
-
-  res.send(`
-    <h1>Admin OK</h1>
-    <p>Total QRs: ${total.rows[0].count}</p>
-    <p>Reclamados: ${claimed.rows[0].count}</p>
-  `);
+  next();
 });
+
+app.use("/admin", express.static(path.join(__dirname, "public")));
 
 /* =========================
    GENERAR QRS (ADMIN)
