@@ -8,6 +8,8 @@
   },
   "dependencies": {
     "cors": "^2.8.6",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "qrcode": "^1.5.4",
+    "uuid": "^13.0.0"
   }
 }
