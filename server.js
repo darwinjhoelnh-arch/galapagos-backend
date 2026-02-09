@@ -21,14 +21,36 @@ const BASE_URL =
 ================================ */
 app.get("/r/:id", (req, res) => {
   const { id } = req.params;
+  res.send(`
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Abrir Phantom</title>
+</head>
+<body style="background:#000;color:#fff;text-align:center;padding-top:80px;font-family:sans-serif">
 
-  const claimUrl = `${BASE_URL}/claim/${id}`;
-  const phantomUrl =
-    "https://phantom.app/ul/browse/" +
-    encodeURIComponent(claimUrl);
+<h2>🌱 Galápagos Token</h2>
+<p>Abriendo Phantom Wallet…</p>
 
-  res.redirect(302, phantomUrl);
+<a id="open" href="https://phantom.app/ul/browse/${encodeURIComponent(
+    BASE_URL + "/claim/" + id
+  )}"
+   style="display:inline-block;margin-top:30px;padding:16px 24px;background:#7c5cff;color:#fff;border-radius:12px;text-decoration:none;font-size:18px">
+   Abrir en Phantom Wallet
+</a>
+
+<script>
+setTimeout(() => {
+  document.getElementById("open").click();
+}, 800);
+</script>
+
+</body>
+</html>
+  `);
 });
+
 
 /* ===============================
    PÁGINA DE RECLAMO
