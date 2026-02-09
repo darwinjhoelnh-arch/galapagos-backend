@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Galápagos Token</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+</head>
+<body>
+<h2>Galápagos Token</h2>
+<div id="info"></div>
+<button id="claim">Reclamar</button>
+
+<script>
+const id = location.pathname.split("/").pop();
+
+async function load() {
+  const qr = await fetch(`/api/claim/${id}`).then(r=>r.json());
+  const price = await fetch("/api/token-price").then(r=>r.json());
+
+  const tokens = (qr.value_usd / price.price).toFixed(4);
+
+  document.getElementById("info").innerHTML = `
+    Producto: ${qr.product_name}<br>
+    Recompensa: $${qr.value_usd}<br>
+    Precio token: $${price.price}<br>
+    Tokens a recibir: ${tokens}
+  `;
+}
+
+document.getElementById("claim").onclick = async () => {
+  const provider = window.solana;
+  if (!provider?.isPhantom) return alert("Instala Phantom");
+
+  const wallet = await provider.connect();
+  await fetch(`/api/claim/${id}`, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ wallet: wallet.publicKey.toString() })
+  });
+
+  alert("Reclamado con éxito");
+};
+
+load();
+</script>
+</body>
+</html>

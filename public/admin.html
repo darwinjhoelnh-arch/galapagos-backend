@@ -1,37 +1,27 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Galápagos Admin</title>
-  <link rel="stylesheet" href="/admin.css" />
+  <meta charset="utf-8">
+  <title>Admin</title>
+  <link rel="stylesheet" href="/admin.css">
 </head>
 <body>
-  <div class="container">
-    <h1>🌱 Galápagos Token Admin</h1>
+<h1>Galápagos Token Admin</h1>
 
-    <section class="card">
-      <h2>Generar QRs</h2>
-      <input id="product" placeholder="Producto (ej: cafe)" />
-      <input id="value" type="number" placeholder="Valor USD" />
-      <input id="qty" type="number" placeholder="Cantidad" />
-      <button onclick="generate()">Generar</button>
-    </section>
+<h2>Generar QRs</h2>
+<input id="product" placeholder="Producto">
+<input id="value" placeholder="USD">
+<input id="amount" placeholder="Cantidad">
+<button onclick="generate()">Generar</button>
 
-    <section class="card">
-      <h2>Descargar QRs</h2>
-      <input id="downloadProduct" placeholder="Producto (ej: cafe)" />
-      <label>
-        <input type="checkbox" id="onlyNew" /> Solo nuevos
-      </label>
-      <button onclick="downloadZip()">Descargar ZIP</button>
-    </section>
+<h2>Descargar QRs</h2>
+<input id="prod2" placeholder="Producto">
+<label><input type="checkbox" id="onlyNew"> Solo nuevos</label>
+<button onclick="download()">Descargar ZIP</button>
 
-    <section class="card">
-      <h2>Estadísticas</h2>
-      <div id="stats">Cargando...</div>
-    </section>
-  </div>
+<h2>Estadísticas</h2>
+<div id="stats">Cargando...</div>
 
-  <script src="/admin.js"></script>
+<script src="/admin.js"></script>
 </body>
 </html>
