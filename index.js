@@ -1,219 +1,166 @@
 import express from "express";
-import fs from "fs";
 import cors from "cors";
 import http from "http";
+import pkg from "pg";
+import QRCode from "qrcode";
+import archiver from "archiver";
+import crypto from "crypto";
 
+const { Pool } = pkg;
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
 /* ===============================
    CONFIG
 ================================ */
-const LOGO_BASE64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAYGBgYHBgcICAcKCwoLCg8ODAwODxYQERAREBYiFRkVFRkVIh4kHhweJB42KiYmKjY+NDI0PkxERExfWl98fKcB"; 
-// ⬆️ logo embebido (no depende de archivos externos)
+const BASE_URL = "https://galapagos-backend.onrender.com";
+const ADMIN_TOKEN = "galapagos_admin_2026";
 
-/* ===============================
-   HEALTH CHECK
-================================ */
-app.get("/", (req, res) => {
-  res.send("OK");
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
 });
 
 /* ===============================
-   REDIRECT QR → PHANTOM
-   /r/:id
+   HEALTH
+================================ */
+app.get("/", (req, res) => res.send("OK"));
+
+/* ===============================
+   QR → PHANTOM (NO TOCAR)
 ================================ */
 app.get("/r/:id", (req, res) => {
-  const { id } = req.params;
-
-  const phantomLink =
+  const phantom =
     "https://phantom.app/ul/browse/" +
-    encodeURIComponent(`https://galapagos-backend.onrender.com/claim/${id}`);
+    encodeURIComponent(`${BASE_URL}/claim/${req.params.id}`);
 
-  res.redirect(302, phantomLink);
+  res.redirect(302, phantom);
 });
 
 /* ===============================
-   PÁGINA DE RECLAMO
-   GET /claim/:id
+   CLAIM PAGE (NO TOCAR DISEÑO)
 ================================ */
-app.get("/claim/:id", (req, res) => {
-  const { id } = req.params;
+app.get("/claim/:id", async (req, res) => {
+  const { rows } = await pool.query(
+    "SELECT * FROM qrs WHERE id=$1",
+    [req.params.id]
+  );
 
-  let qrs;
-  try {
-    qrs = JSON.parse(fs.readFileSync("qrs.json"));
-  } catch {
-    return res.send("Error interno");
-  }
+  if (!rows.length) return res.send("QR inválido");
+  if (rows[0].claimed_at) return res.send("QR ya reclamado");
 
-  if (!qrs[id]) return res.send("QR no válido");
-  if (qrs[id].usado) return res.send("Este QR ya fue reclamado");
-
-  const valorUSD = qrs[id].valor_usd;
-  const recompensaUSD = (valorUSD * 0.01).toFixed(2);
+  const reward = (rows[0].value_usd * 0.01).toFixed(2);
 
   res.send(`
 <!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Reclamar Galápagos Token</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<style>
-body {
-  margin:0;
-  background: radial-gradient(circle at top, #0f3d2e, #000);
-  font-family: 'Segoe UI', sans-serif;
-  color:#e8fff3;
-}
-
-.container {
-  max-width:420px;
-  margin:40px auto;
-  padding:30px;
-  border-radius:20px;
-  background: rgba(0,40,30,0.85);
-  box-shadow: 0 0 40px rgba(0,255,170,0.25);
-  text-align:center;
-}
-
-.logo {
-  width:120px;
-  margin-bottom:20px;
-}
-
-h1 {
-  color:#00ffb3;
-  font-size:22px;
-  margin-bottom:5px;
-}
-
-.subtitle {
-  font-size:13px;
-  opacity:.8;
-  margin-bottom:25px;
-}
-
-.value {
-  font-size:28px;
-  color:#00ff9c;
-  margin:20px 0;
-}
-
-button {
-  width:100%;
-  padding:15px;
-  font-size:16px;
-  background: linear-gradient(135deg,#00ff9c,#00c977);
-  border:none;
-  border-radius:12px;
-  color:#002;
-  font-weight:bold;
-  cursor:pointer;
-}
-
-button:hover {
-  opacity:.9;
-}
-
-.success-box {
-  margin-top:20px;
-  padding:15px;
-  background: rgba(0,255,160,.15);
-  border-radius:12px;
-  color:#9cffda;
-  display:none;
-}
-</style>
+<html><head>
+<meta name="viewport" content="width=device-width">
 </head>
-
-<body>
-<div class="container">
-
-<img src="${LOGO_BASE64}" class="logo" />
-
-<h1>GALÁPAGOS TOKEN</h1>
-<div class="subtitle">Tecnología para preservar la vida</div>
-
-<div class="value">$${recompensaUSD} USD en tokens</div>
-
-<button onclick="firmar()">Firmar y reclamar</button>
-
-<div id="success" class="success-box"></div>
-
-</div>
+<body style="background:#042b20;color:#bfffe5;font-family:sans-serif;text-align:center">
+<h2>Galápagos Token</h2>
+<p>Producto: ${rows[0].product_name}</p>
+<p>Recompensa: $${reward} USD</p>
+<button onclick="claim()">Firmar y reclamar</button>
 
 <script>
-async function firmar() {
-  if (!window.solana) {
-    alert("Abre este enlace dentro de Phantom Wallet");
-    return;
-  }
+async function claim(){
+ if(!window.solana){alert("Abrir en Phantom");return;}
+ await window.solana.connect();
+ const msg=new TextEncoder().encode("Reclamo Galápagos ${req.params.id}");
+ const sig=await window.solana.signMessage(msg,"utf8");
 
-  const msg = new TextEncoder().encode("Reclamo Galápagos Token QR ${id}");
-  await window.solana.connect();
-  const signed = await window.solana.signMessage(msg, "utf8");
+ await fetch("/claim/${req.params.id}/sign",{method:"POST",
+ headers:{"Content-Type":"application/json"},
+ body:JSON.stringify({wallet:window.solana.publicKey.toString()})
+ });
 
-  const res = await fetch("/claim/${id}/sign", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      publicKey: window.solana.publicKey.toString(),
-      signature: Array.from(signed.signature)
-    })
-  });
-
-  const data = await res.json();
-  const box = document.getElementById("success");
-  box.style.display = "block";
-  box.innerHTML = "🌱 <strong>Felicidades por ser parte de Galápagos Token</strong><br/>Tu recompensa ha sido validada correctamente.";
+ alert("Reclamo enviado");
 }
 </script>
-
-</body>
-</html>
+</body></html>
 `);
 });
 
 /* ===============================
-   RECIBE FIRMA
-   POST /claim/:id/sign
+   CLAIM SIGN
 ================================ */
-app.post("/claim/:id/sign", (req, res) => {
-  const { id } = req.params;
-  const { publicKey } = req.body;
+app.post("/claim/:id/sign", async (req, res) => {
+  await pool.query(
+    "UPDATE qrs SET claimed_at=NOW() WHERE id=$1 AND claimed_at IS NULL",
+    [req.params.id]
+  );
+  res.json({ ok: true });
+});
 
-  if (!publicKey) {
-    return res.json({ error: "Firma inválida" });
+/* ===============================
+   ADMIN AUTH
+================================ */
+function admin(req, res, next) {
+  if (req.query.token !== ADMIN_TOKEN)
+    return res.status(403).send("No autorizado");
+  next();
+}
+
+/* ===============================
+   ADMIN DASHBOARD (SIMPLE)
+================================ */
+app.get("/admin", admin, async (req, res) => {
+  const total = await pool.query("SELECT COUNT(*) FROM qrs");
+  const claimed = await pool.query("SELECT COUNT(*) FROM qrs WHERE claimed_at IS NOT NULL");
+
+  res.send(`
+<h2>Admin OK</h2>
+<p>Total QRs: ${total.rows[0].count}</p>
+<p>Reclamados: ${claimed.rows[0].count}</p>
+`);
+});
+
+/* ===============================
+   GENERAR QRS
+================================ */
+app.post("/admin/generate", admin, async (req, res) => {
+  const { product, value, qty } = req.body;
+  const ids = [];
+
+  for (let i = 0; i < qty; i++) {
+    const id = crypto.randomUUID();
+    await pool.query(
+      "INSERT INTO qrs(id,product_name,value_usd) VALUES($1,$2,$3)",
+      [id, product, value]
+    );
+    ids.push(id);
   }
 
-  let qrs = JSON.parse(fs.readFileSync("qrs.json"));
-  if (!qrs[id] || qrs[id].usado) {
-    return res.json({ error: "QR inválido" });
+  res.json({ ok: true, ids });
+});
+
+/* ===============================
+   DOWNLOAD ZIP
+================================ */
+app.get("/admin/download/:product", admin, async (req, res) => {
+  const { rows } = await pool.query(
+    "SELECT id FROM qrs WHERE product_name=$1 AND claimed_at IS NULL",
+    [req.params.product]
+  );
+
+  res.setHeader("Content-Type", "application/zip");
+  res.setHeader("Content-Disposition", "attachment; filename=qrs.zip");
+
+  const archive = archiver("zip");
+  archive.pipe(res);
+
+  for (const qr of rows) {
+    const png = await QRCode.toBuffer(`${BASE_URL}/r/${qr.id}`);
+    archive.append(png, { name: `${qr.id}.png` });
   }
 
-  // (aquí luego va el envío real del token SPL)
-  qrs[id].usado = true;
-  fs.writeFileSync("qrs.json", JSON.stringify(qrs, null, 2));
-
-  res.json({
-    success: true,
-    mensaje: "Felicidades por ser parte de Galápagos Token 🌱"
-  });
+  archive.finalize();
 });
 
 /* ===============================
    SERVER
 ================================ */
 const PORT = process.env.PORT || 8080;
-const server = http.createServer(app);
-
-server.listen(PORT, "0.0.0.0", () => {
-  console.log("Galápagos Backend corriendo en puerto " + PORT);
-});
-
-server.keepAliveTimeout = 120000;
-server.headersTimeout = 120000;
+http.createServer(app).listen(PORT, "0.0.0.0");
