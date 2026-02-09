@@ -1,47 +1,73 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <title>Galápagos Token</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Reclamar Galápagos Token</title>
+
+<style>
+body {
+  background:#0b1f1a;
+  color:#d7fff1;
+  font-family: Arial, sans-serif;
+  text-align:center;
+  padding-top:60px;
+}
+button {
+  padding:15px 30px;
+  font-size:16px;
+  border:none;
+  border-radius:10px;
+  background:#00ff9c;
+  color:#003;
+  cursor:pointer;
+}
+</style>
 </head>
+
 <body>
-<h2>Galápagos Token</h2>
-<div id="info"></div>
-<button id="claim">Reclamar</button>
+
+<h2>🌱 Galápagos Token</h2>
+<p>Firma para reclamar tu recompensa</p>
+
+<button onclick="claim()">Firmar con Phantom</button>
 
 <script>
-const id = location.pathname.split("/").pop();
+async function claim() {
+  if (!window.solana || !window.solana.isPhantom) {
+    alert("Abre este enlace dentro de Phantom Wallet");
+    return;
+  }
 
-async function load() {
-  const qr = await fetch(`/api/claim/${id}`).then(r=>r.json());
-  const price = await fetch("/api/token-price").then(r=>r.json());
+  await window.solana.connect();
 
-  const tokens = (qr.value_usd / price.price).toFixed(4);
+  const msg = new TextEncoder().encode(
+    "Reclamo Galápagos Token"
+  );
 
-  document.getElementById("info").innerHTML = `
-    Producto: ${qr.product_name}<br>
-    Recompensa: $${qr.value_usd}<br>
-    Precio token: $${price.price}<br>
-    Tokens a recibir: ${tokens}
-  `;
+  const signed = await window.solana.signMessage(msg, "utf8");
+
+  const res = await fetch(
+    window.location.pathname + "/sign",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        publicKey: window.solana.publicKey.toString(),
+        signature: Array.from(signed.signature)
+      })
+    }
+  );
+
+  const data = await res.json();
+
+  if (data.success) {
+    alert("✅ Reclamo exitoso 🌱");
+  } else {
+    alert("❌ " + data.error);
+  }
 }
-
-document.getElementById("claim").onclick = async () => {
-  const provider = window.solana;
-  if (!provider?.isPhantom) return alert("Instala Phantom");
-
-  const wallet = await provider.connect();
-  await fetch(`/api/claim/${id}`, {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({ wallet: wallet.publicKey.toString() })
-  });
-
-  alert("Reclamado con éxito");
-};
-
-load();
 </script>
+
 </body>
 </html>
