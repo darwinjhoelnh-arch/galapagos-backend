@@ -1,40 +1,24 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
-<meta charset="UTF-8" />
-<title>Reclamar Galápagos</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reclamar</title>
 <style>
-body{
-  background:#031d17;
-  color:#aefde3;
-  font-family:Arial;
-}
-.card{
-  background:#052a22;
-  padding:20px;
-  border-radius:14px;
-  max-width:360px;
-  margin:40px auto;
-}
-button{
-  width:100%;
-  padding:14px;
-  border:none;
-  border-radius:10px;
-  background:#00ff9c;
-  font-weight:bold;
-}
+body{margin:0;background:#021812;color:#eafff7;font-family:system-ui}
+.card{margin:24px;padding:22px;border-radius:18px;background:#053124}
+h2{color:#00ffb3;text-align:center}
+.btn{width:100%;padding:14px;border:none;border-radius:14px;background:#00ffb3;font-size:18px;font-weight:700}
 </style>
 </head>
 <body>
 
 <div class="card">
-<h2>🌱 Galápagos Token</h2>
-<p>Producto: <b id="p"></b></p>
-<p>Valor: $<b id="v"></b></p>
-<p>Recompensa: 1%</p>
-<p>Tokens a recibir: <b id="t"></b></p>
-<button onclick="claim()">Reclamar con Phantom</button>
+  <h2>🌱 Galápagos</h2>
+  <p>Producto: <b id="n">–</b></p>
+  <p>Valor: $<b id="p">–</b></p>
+  <p>Recompensa: 1%</p>
+  <p>Tokens: <b id="t">–</b></p>
+  <button class="btn" onclick="claim()">Reclamar</button>
 </div>
 
 <script>
@@ -43,14 +27,15 @@ const id = location.pathname.split("/").pop();
 fetch(`/api/qr/${id}`)
 .then(r=>r.json())
 .then(d=>{
-  p.textContent = d.name;
-  v.textContent = d.price_usd;
-  t.textContent = (d.price_usd * 0.01).toFixed(4);
+  n.textContent=d.name;
+  p.textContent=d.price_usd;
+  t.textContent=(d.price_usd*0.01).toFixed(6);
 });
 
-async function claim(){
-  await fetch(`/api/qr/${id}/claim`,{ method:"POST" });
-  alert("QR reclamado");
+function claim(){
+  fetch(`/api/claim/${id}`,{method:"POST"})
+  .then(r=>r.json())
+  .then(j=>alert(j.success?"Reclamado":"Error"));
 }
 </script>
 
