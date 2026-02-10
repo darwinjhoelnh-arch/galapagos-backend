@@ -3,69 +3,109 @@
 <head>
 <meta charset="UTF-8">
 <title>Galápagos Admin</title>
+
 <style>
 body {
+  margin: 0;
+  min-height: 100vh;
   background: radial-gradient(circle at top, #0f3d2e, #000);
-  color: #e8fff3;
   font-family: Arial, sans-serif;
+  color: #e8fff3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
+
 .card {
-  background: rgba(0,40,30,0.9);
-  padding: 20px;
-  border-radius: 16px;
-  max-width: 420px;
-  margin: 40px auto;
-  box-shadow: 0 0 30px rgba(0,255,170,0.2);
+  background: rgba(0, 40, 30, 0.95);
+  padding: 28px;
+  border-radius: 18px;
+  width: 420px;
+  box-shadow: 0 0 40px rgba(0, 255, 170, 0.25);
 }
-input, button {
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+input {
   width: 100%;
   padding: 12px;
   margin-top: 10px;
   border-radius: 10px;
   border: none;
+  outline: none;
+  font-size: 15px;
 }
+
 button {
-  background: linear-gradient(135deg,#00ff9c,#00c977);
+  margin-top: 18px;
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  font-size: 16px;
   cursor: pointer;
+  background: linear-gradient(135deg, #00ff9c, #00c977);
+  color: #003322;
+  font-weight: bold;
 }
+
+button:hover {
+  opacity: 0.9;
+}
+
 pre {
   margin-top: 20px;
-  white-space: pre-wrap;
+  background: #001a14;
+  padding: 12px;
+  border-radius: 10px;
+  max-height: 260px;
+  overflow: auto;
+  font-size: 13px;
 }
 </style>
 </head>
+
 <body>
 
 <div class="card">
   <h2>🌱 Crear Producto</h2>
 
-  <input id="name" placeholder="Nombre del producto">
-  <input id="value" placeholder="Precio USD" type="number">
-  <input id="units" placeholder="Unidades / QRs" type="number">
-  <input id="token" placeholder="Admin token" type="password">
+  <!-- IMPORTANTE: IDs CORREGIDOS -->
+  <input id="productName" placeholder="Nombre del producto">
+  <input id="price" type="number" placeholder="Precio USD">
+  <input id="units" type="number" placeholder="Cantidad de QRs">
+  <input id="adminToken" type="password" placeholder="Admin token">
 
-  <button onclick="create()">Crear</button>
+  <button onclick="createProduct()">Crear</button>
 
-  <pre id="out"></pre>
+  <pre id="output"></pre>
 </div>
 
 <script>
-async function create() {
+async function createProduct() {
+  const payload = {
+    name: document.getElementById("productName").value,
+    value: Number(document.getElementById("price").value),
+    units: Number(document.getElementById("units").value)
+  };
+
+  const token = document.getElementById("adminToken").value;
+
   const res = await fetch("/admin/create-product", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-admin-token": token.value
+      "x-admin-token": token
     },
-    body: JSON.stringify({
-      name: name.value,
-      value: Number(value.value),
-      units: Number(units.value)
-    })
+    body: JSON.stringify(payload)
   });
 
   const data = await res.json();
-  out.textContent = JSON.stringify(data, null, 2);
+  document.getElementById("output").textContent =
+    JSON.stringify(data, null, 2);
 }
 </script>
 
