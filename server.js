@@ -1,62 +1,75 @@
 import express from "express";
-import pkg from "pg";
 import cors from "cors";
+import pkg from "pg";
+import path from "path";
+import { fileURLToPath } from "url";
 import { v4 as uuidv4 } from "uuid";
 import QRCode from "qrcode";
-import path from "path";
-import fs from "fs";
 
 const { Pool } = pkg;
 const app = express();
 
+/* ---------- PATH ---------- */
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+/* ---------- MIDDLEWARE ---------- */
 app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
+/* ---------- DB ---------- */
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
-const BASE_URL = "https://galapagos-backend-1.onrender.com";
-const TOKEN_PRICE_USD = 0.000001; // precio actual (ajustable)
+/* ---------- CONFIG ---------- */
+const BASE_URL = process.env.BASE_URL; // ej: https://galapagos-backend-1.onrender.com
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
+const TOKEN_PRICE_USD = 0.000001;
+const PORT = process.env.PORT || 10000;
 
-// -------------------- DB INIT --------------------
-await pool.query(`
-CREATE TABLE IF NOT EXISTS products (
-  id UUID PRIMARY KEY,
-  name TEXT NOT NULL,
-  price_usd NUMERIC NOT NULL
-);
+/* =========================================================
+   ADMIN
+========================================================= */
 
-CREATE TABLE IF NOT EXISTS qrs (
-  id UUID PRIMARY KEY,
-  product_id UUID REFERENCES products(id),
-  used BOOLEAN DEFAULT false,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-`);
+/* LISTAR PRODUCTOS */
+app.get("/admin/products", async (req, res) => {
+  const r = await pool.query(`
+    SELECT 
+      p.id,
+      p.name,
+      p.price_usd,
+      COUNT(q.id) as total_qrs,
+      COUNT(q.id) FILTER (WHERE q.used = true) as claimed_qrs
+    FROM products p
+    LEFT JOIN qrs q ON q.product_id = p.id
+    GROUP BY p.id
+    ORDER BY p.created_at DESC
+  `);
 
-console.log("✅ DB inicializada");
+  res.json(r.rows);
+});
 
-// -------------------- ADMIN: CREAR PRODUCTO + QRS --------------------
+/* CREAR PRODUCTO + QRS */
 app.post("/admin/create-product", async (req, res) => {
   try {
-    const { name, price_usd, units, admin_token } = req.body;
-
-    if (admin_token !== process.env.ADMIN_TOKEN) {
+    const token = req.headers["x-admin-token"];
+    if (token !== ADMIN_TOKEN) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    if (!name || !price_usd || !units) {
+    const { name, value, units } = req.body;
+    if (!name || !value || !units) {
       return res.status(400).json({ error: "Invalid input" });
     }
 
     const productId = uuidv4();
 
     await pool.query(
-      "INSERT INTO products(id,name,price_usd) VALUES ($1,$2,$3)",
-      [productId, name, price_usd]
+      "INSERT INTO products (id,name,price_usd,created_at) VALUES ($1,$2,$3,NOW())",
+      [productId, name, value]
     );
 
     const qrs = [];
@@ -65,32 +78,40 @@ app.post("/admin/create-product", async (req, res) => {
       const qrId = uuidv4();
 
       await pool.query(
-        "INSERT INTO qrs(id,product_id) VALUES ($1,$2)",
+        "INSERT INTO qrs (id,product_id,used) VALUES ($1,$2,false)",
         [qrId, productId]
       );
 
-      const qrPath = `public/qrs/${qrId}.png`;
-      await QRCode.toFile(qrPath, `${BASE_URL}/r/${qrId}`);
+      await QRCode.toFile(
+        `public/qrs/${qrId}.png`,
+        `${BASE_URL}/r/${qrId}`
+      );
 
-      qrs.push({
-        id: qrId,
-        url: `${BASE_URL}/qrs/${qrId}.png`
-      });
+      qrs.push(qrId);
     }
 
-    res.json({ success: true, productId, units, qrs });
+    res.json({
+      success: true,
+      productId,
+      units,
+      qrs
+    });
+
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: "Server error" });
   }
 });
 
-// -------------------- API QR INFO (LO QUE FALTABA) --------------------
+/* =========================================================
+   QR INFO (MÓVIL)
+========================================================= */
+
 app.get("/api/qr/:id", async (req, res) => {
   const { id } = req.params;
 
   const r = await pool.query(`
-    SELECT
+    SELECT 
       q.id,
       q.used,
       p.name,
@@ -105,19 +126,21 @@ app.get("/api/qr/:id", async (req, res) => {
   }
 
   const row = r.rows[0];
-  const rewardUsd = row.price_usd * 0.01;
+  const rewardUsd = Number(row.price_usd) * 0.01;
   const tokens = rewardUsd / TOKEN_PRICE_USD;
 
   res.json({
     product: row.name,
     price_usd: row.price_usd,
-    reward_usd: rewardUsd,
     tokens,
     used: row.used
   });
 });
 
-// -------------------- RECLAMAR (marca usado) --------------------
+/* =========================================================
+   RECLAMAR QR
+========================================================= */
+
 app.post("/api/claim/:id", async (req, res) => {
   const { id } = req.params;
 
@@ -134,9 +157,6 @@ app.post("/api/claim/:id", async (req, res) => {
     return res.status(400).json({ error: "QR ya reclamado" });
   }
 
-  // 🔥 AQUÍ VA TU TRANSFERENCIA REAL SPL (Phantom / Solana)
-  // ahora solo marcamos como usado
-
   await pool.query(
     "UPDATE qrs SET used=true WHERE id=$1",
     [id]
@@ -145,12 +165,18 @@ app.post("/api/claim/:id", async (req, res) => {
   res.json({ success: true });
 });
 
-// -------------------- SERVIR PÁGINA QR --------------------
+/* =========================================================
+   SERVIR PÁGINA QR
+========================================================= */
+
 app.get("/r/:id", (req, res) => {
-  res.sendFile(path.resolve("public/r.html"));
+  res.sendFile(path.join(__dirname, "public", "r.html"));
 });
 
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () =>
-  console.log("🚀 Servidor corriendo en", PORT)
-);
+/* =========================================================
+   START
+========================================================= */
+
+app.listen(PORT, () => {
+  console.log("🚀 Server running on port", PORT);
+});
