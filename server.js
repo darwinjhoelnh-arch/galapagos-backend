@@ -25,7 +25,7 @@ const pool = new Pool({
 });
 
 /* ---------- CONFIG ---------- */
-const BASE_URL = process.env.BASE_URL; // ej: https://galapagos-backend-1.onrender.com
+const BASE_URL = process.env.BASE_URL || "https://galapagos-backend-1.onrender.com";
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 const TOKEN_PRICE_USD = 0.000001;
 const PORT = process.env.PORT || 10000;
@@ -41,8 +41,8 @@ app.get("/admin/products", async (req, res) => {
       p.id,
       p.name,
       p.price_usd,
-      COUNT(q.id) as total_qrs,
-      COUNT(q.id) FILTER (WHERE q.used = true) as claimed_qrs
+      COUNT(q.id) AS total_qrs,
+      COUNT(q.id) FILTER (WHERE q.claimed = true) AS claimed_qrs
     FROM products p
     LEFT JOIN qrs q ON q.product_id = p.id
     GROUP BY p.id
@@ -78,7 +78,7 @@ app.post("/admin/create-product", async (req, res) => {
       const qrId = uuidv4();
 
       await pool.query(
-        "INSERT INTO qrs (id,product_id,used) VALUES ($1,$2,false)",
+        "INSERT INTO qrs (id,product_id,claimed) VALUES ($1,$2,false)",
         [qrId, productId]
       );
 
@@ -87,7 +87,10 @@ app.post("/admin/create-product", async (req, res) => {
         `${BASE_URL}/r/${qrId}`
       );
 
-      qrs.push(qrId);
+      qrs.push({
+        id: qrId,
+        url: `${BASE_URL}/qrs/${qrId}.png`
+      });
     }
 
     res.json({
@@ -104,7 +107,7 @@ app.post("/admin/create-product", async (req, res) => {
 });
 
 /* =========================================================
-   QR INFO (MÓVIL)
+   QR INFO (MÓVIL / PHANTOM)
 ========================================================= */
 
 app.get("/api/qr/:id", async (req, res) => {
@@ -113,7 +116,7 @@ app.get("/api/qr/:id", async (req, res) => {
   const r = await pool.query(`
     SELECT 
       q.id,
-      q.used,
+      q.claimed,
       p.name,
       p.price_usd
     FROM qrs q
@@ -133,7 +136,7 @@ app.get("/api/qr/:id", async (req, res) => {
     product: row.name,
     price_usd: row.price_usd,
     tokens,
-    used: row.used
+    claimed: row.claimed
   });
 });
 
@@ -145,7 +148,7 @@ app.post("/api/claim/:id", async (req, res) => {
   const { id } = req.params;
 
   const r = await pool.query(
-    "SELECT used FROM qrs WHERE id=$1",
+    "SELECT claimed FROM qrs WHERE id = $1",
     [id]
   );
 
@@ -153,12 +156,12 @@ app.post("/api/claim/:id", async (req, res) => {
     return res.status(404).json({ error: "QR no existe" });
   }
 
-  if (r.rows[0].used) {
+  if (r.rows[0].claimed) {
     return res.status(400).json({ error: "QR ya reclamado" });
   }
 
   await pool.query(
-    "UPDATE qrs SET used=true WHERE id=$1",
+    "UPDATE qrs SET claimed = true, used_at = NOW() WHERE id = $1",
     [id]
   );
 
