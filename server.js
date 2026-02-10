@@ -108,10 +108,12 @@ app.post("/claim/:id/sign", async (req, res) => {
     [publicKey, id]
   );
 
-  await pool.query(
-    "INSERT INTO claims VALUES ($1,$2,$3,$4,$5,$6)",
-    [uuidv4(), id, publicKey, rewardUSD, priceUSD, tokens]
-  );
+ await pool.query(
+  `INSERT INTO claims 
+   (id, qr_id, wallet, reward_usd, token_price_usd, tokens)
+   VALUES ($1,$2,$3,$4,$5,$6)`,
+  [uuidv4(), id, publicKey, rewardUSD, priceUSD, tokens]
+);
 
   res.json({ success: true, rewardUSD, priceUSD, tokens });
 });
@@ -124,10 +126,10 @@ app.post("/admin/create-product", async (req, res) => {
   const { name, value, units } = req.body;
   const productId = uuidv4();
 
-  await pool.query(
-    "INSERT INTO products VALUES ($1,$2,$3,$4)",
-    [productId, name, value, units]
-  );
+await pool.query(
+  "INSERT INTO products (id, name, value_usd, units) VALUES ($1,$2,$3,$4)",
+  [productId, name, value, units]
+);
 
   const qrs = [];
   for (let i = 0; i < units; i++) {
