@@ -3,71 +3,38 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Reclamar Galápagos Token</title>
-
-<style>
-body {
-  background:#0b1f1a;
-  color:#d7fff1;
-  font-family: Arial, sans-serif;
-  text-align:center;
-  padding-top:60px;
-}
-button {
-  padding:15px 30px;
-  font-size:16px;
-  border:none;
-  border-radius:10px;
-  background:#00ff9c;
-  color:#003;
-  cursor:pointer;
-}
-</style>
+<title>Reclamar</title>
 </head>
-
-<body>
+<body style="background:#0b1f1a;color:#eafff7;text-align:center;padding-top:60px;font-family:Arial">
 
 <h2>🌱 Galápagos Token</h2>
-<p>Firma para reclamar tu recompensa</p>
-
+<p>Firma para reclamar</p>
 <button onclick="claim()">Firmar con Phantom</button>
 
 <script>
 async function claim() {
   if (!window.solana || !window.solana.isPhantom) {
-    alert("Abre este enlace dentro de Phantom Wallet");
+    alert("Abre esto dentro de Phantom Wallet");
     return;
   }
 
   await window.solana.connect();
 
-  const msg = new TextEncoder().encode(
-    "Reclamo Galápagos Token"
-  );
-
+  const msg = new TextEncoder().encode("Reclamo Galápagos Token");
   const signed = await window.solana.signMessage(msg, "utf8");
 
-  const res = await fetch(
-    window.location.pathname + "/sign",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        publicKey: window.solana.publicKey.toString(),
-        signature: Array.from(signed.signature)
-      })
-    }
-  );
+  const res = await fetch(window.location.pathname + "/sign", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      publicKey: window.solana.publicKey.toString(),
+      signature: Array.from(signed.signature)
+    })
+  });
 
   const data = await res.json();
-
-  if (data.success) {
-    alert("✅ Reclamo exitoso 🌱");
-  } else {
-    alert("❌ " + data.error);
-  }
+  alert(data.success ? "✅ Reclamo exitoso" : data.error);
 }
 </script>
-
 </body>
 </html>

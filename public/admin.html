@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Galápagos</title>
+</head>
+<body style="font-family:Arial;background:#081915;color:#eafff7;padding:40px">
+
+<h2>🛠 Panel Admin – Galápagos</h2>
+
+<label>Nombre producto</label><br>
+<input id="name"><br><br>
+
+<label>Valor (USD)</label><br>
+<input id="value" type="number"><br><br>
+
+<label>Unidades</label><br>
+<input id="units" type="number"><br><br>
+
+<label>Admin Token</label><br>
+<input id="token" type="password"><br><br>
+
+<button onclick="create()">Crear Producto + QRs</button>
+
+<pre id="out"></pre>
+
+<script>
+async function create() {
+  const res = await fetch("/admin/create-product", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-admin-token": document.getElementById("token").value
+    },
+    body: JSON.stringify({
+      name: document.getElementById("name").value,
+      value: Number(document.getElementById("value").value),
+      units: Number(document.getElementById("units").value)
+    })
+  });
+
+  document.getElementById("out").textContent =
+    JSON.stringify(await res.json(), null, 2);
+}
+</script>
+
+</body>
+</html>
