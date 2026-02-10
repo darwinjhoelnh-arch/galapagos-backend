@@ -2,10 +2,15 @@ import express from "express";
 import fs from "fs";
 import cors from "cors";
 import path from "path";
+import QRCode from "qrcode";
+import { v4 as uuidv4 } from "uuid";
+
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use("/qrs", express.static("qrs"));
+
 
 const __dirname = path.resolve();
 
@@ -103,7 +108,41 @@ app.post("/claim/:id/sign", (req, res) => {
    SERVER
 ================================ */
 const PORT = process.env.PORT || 8080;
+app.post("/admin/create-qr", async (req, res) => {
+  const token = req.headers["x-admin-token"];
 
+  if (token !== process.env.ADMIN_TOKEN) {
+    return res.status(401).json({ error: "No autorizado" });
+  }
+
+  const id = uuidv4();
+
+  let qrs = {};
+  try {
+    qrs = JSON.parse(fs.readFileSync("qrs.json"));
+  } catch {}
+
+  qrs[id] = {
+    used: false,
+    createdAt: new Date().toISOString()
+  };
+
+  fs.writeFileSync("qrs.json", JSON.stringify(qrs, null, 2));
+
+  const url = `${BASE_URL}/r/${id}`;
+  const qrPath = `qrs/${id}.png`;
+
+  await QRCode.toFile(qrPath, url, {
+    width: 600,
+    margin: 2
+  });
+
+  res.json({
+    id,
+    url,
+    qr_image: `${BASE_URL}/${qrPath}`
+  });
+});
 app.listen(PORT, () => {
   console.log("Servidor corriendo en puerto " + PORT);
 });
