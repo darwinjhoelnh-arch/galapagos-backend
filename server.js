@@ -151,6 +151,69 @@ app.get("/r/:id", (req, res) => {
 app.get("/claim/:id", (_, res) => {
   res.sendFile(path.resolve("public/claim.html"));
 });
+app.get("/r/:qrId", async (req, res) => {
+  try {
+    const { qrId } = req.params;
+    const { wallet } = req.query;
+
+    if (!wallet) {
+      return res.send("Wallet requerida");
+    }
+
+    const qr = await pool.query(`
+      SELECT q.id, q.claimed, p.price_usd
+      FROM qrs q
+      JOIN products p ON p.id = q.product_id
+      WHERE q.id = $1
+    `, [qrId]);
+
+    if (qr.rowCount === 0) {
+      return res.send("QR inválido");
+    }
+
+    if (qr.rows[0].claimed) {
+      return res.send("QR ya reclamado");
+    }
+
+    // 1% del valor
+    const rewardUSD = Number(qr.rows[0].price_usd) * 0.01;
+
+    // Precio del token (DINÁMICO)
+    const priceRes = await fetch(
+      `https://api.dexscreener.com/latest/dex/tokens/${process.env.TOKEN_MINT}`
+    );
+    const priceData = await priceRes.json();
+    const tokenPrice = Number(priceData.pairs[0].priceUsd);
+
+    const tokens = rewardUSD / tokenPrice;
+
+    // Guardar claim
+    await pool.query(
+      "INSERT INTO claims (qr_id, wallet, tokens) VALUES ($1,$2,$3)",
+      [qrId, wallet, tokens]
+    );
+
+    // Marcar QR como usado
+    await pool.query(
+      "UPDATE qrs SET claimed = true WHERE id = $1",
+      [qrId]
+    );
+
+    // Phantom deep link
+    const phantomLink =
+      `https://phantom.app/ul/v1/transfer` +
+      `?recipient=${wallet}` +
+      `&amount=${tokens}` +
+      `&splToken=${process.env.TOKEN_MINT}` +
+      `&network=mainnet-beta`;
+
+    res.redirect(phantomLink);
+
+  } catch (err) {
+    console.error(err);
+    res.send("Error interno");
+  }
+});
 
 app.listen(PORT, () => {
   console.log("Servidor corriendo en puerto", PORT);
