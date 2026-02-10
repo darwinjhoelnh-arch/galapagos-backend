@@ -12,145 +12,115 @@ app.use(express.json());
 const __dirname = path.resolve();
 const BASE_URL = process.env.BASE_URL;
 
-// servir archivos
+// static
 app.use(express.static("public"));
 app.use("/qrs", express.static("qrs"));
 
-// health
 app.get("/", (_, res) => res.send("Galápagos Backend OK 🌱"));
 
-/* ===============================
-   PRECIO REAL DESDE DEXSCREENER
-================================ */
-async function getGalapagosTokenPriceUSD() {
+/* ===== PRECIO REAL DESDE DEXSCREENER ===== */
+async function getTokenPriceUSD() {
   const MINT = "6Z17TYRxJtPvHSGh7s6wtcERgxHGv37sBq6B9Sd1pump";
   const url = `https://api.dexscreener.com/latest/dex/tokens/${MINT}`;
+  const r = await fetch(url);
+  const d = await r.json();
 
-  const res = await fetch(url);
-  const data = await res.json();
-
-  if (!data.pairs || data.pairs.length === 0) {
-    throw new Error("No se encontró pool activo");
+  if (!d.pairs || d.pairs.length === 0) {
+    throw new Error("No hay pool activo");
   }
 
-  const bestPair = data.pairs.reduce((a, b) =>
+  const best = d.pairs.reduce((a, b) =>
     Number(a.liquidity?.usd || 0) > Number(b.liquidity?.usd || 0) ? a : b
   );
 
-  const priceUsd = Number(bestPair.priceUsd);
-  if (!priceUsd || priceUsd <= 0) {
-    throw new Error("Precio inválido");
-  }
-
-  return priceUsd;
+  return Number(best.priceUsd);
 }
 
-/* ===============================
-   QR → LANDING → PHANTOM
-================================ */
+/* ===== QR → PHANTOM (SIN ERROR DE SINTAXIS) ===== */
 app.get("/r/:id", (req, res) => {
-  const { id } = req.params;
+  const target = encodeURIComponent(`${BASE_URL}/claim/${req.params.id}`);
 
-  res.send(`
-<!DOCTYPE html>
-<html>
-<body style="background:#000;color:#fff;text-align:center;padding-top:80px">
+  res.send(`<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Abrir Phantom</title>
+</head>
+<body style="background:#000;color:#fff;text-align:center;padding-top:80px;font-family:Arial">
 <h3>Abriendo Phantom…</h3>
-<a id="open" href="https://phantom.app/ul/browse/${encodeURIComponent(
-    BASE_URL + "/claim/" + id
-  )}">Abrir Phantom</a>
+<a id="open" href="https://phantom.app/ul/browse/${target}"
+style="padding:16px 24px;background:#7c5cff;color:#fff;border-radius:12px;text-decoration:none">
+Abrir Phantom</a>
 <script>
-setTimeout(()=>document.getElementById("open").click(),800);
+setTimeout(function(){document.getElementById("open").click();},800);
 </script>
 </body>
-</html>
-  `);
+</html>`);
 });
 
-/* ===============================
-   CLAIM PAGE
-================================ */
+/* ===== CLAIM ===== */
 app.get("/claim/:id", (_, res) => {
   res.sendFile(path.join(__dirname, "public/claim.html"));
 });
 
-/* ===============================
-   CLAIM + CÁLCULO 1%
-================================ */
 app.post("/claim/:id/sign", async (req, res) => {
   try {
     const { id } = req.params;
     const { publicKey } = req.body;
 
-    if (!publicKey) {
-      return res.json({ error: "Wallet requerida" });
-    }
-
     const qrs = JSON.parse(fs.readFileSync("qrs.json"));
     const products = JSON.parse(fs.readFileSync("products.json"));
 
     const qr = qrs[id];
-    if (!qr || qr.used) {
-      return res.json({ error: "QR inválido o usado" });
-    }
+    if (!qr || qr.used) return res.json({ error: "QR inválido" });
 
     const product = products[qr.productId];
-    if (!product) {
-      return res.json({ error: "Producto no encontrado" });
-    }
-
     const rewardUSD = Number(product.value) * 0.01;
-    const tokenPriceUSD = await getGalapagosTokenPriceUSD();
-    const tokensToSend = rewardUSD / tokenPriceUSD;
+    const priceUSD = await getTokenPriceUSD();
+    const tokens = rewardUSD / priceUSD;
 
     qr.used = true;
     qr.claimedBy = publicKey;
-    qr.claimedAt = new Date().toISOString();
-    qr.reward = {
-      rewardUSD,
-      tokenPriceUSD,
-      tokensToSend
-    };
+    qr.reward = { rewardUSD, priceUSD, tokens };
 
     fs.writeFileSync("qrs.json", JSON.stringify(qrs, null, 2));
 
-    res.json({
-      success: true,
-      product: product.name,
-      rewardUSD,
-      tokenPriceUSD,
-      tokensToSend
-    });
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.json({ success: true, rewardUSD, priceUSD, tokens });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 
-/* ===============================
-   ADMIN: PRODUCTO + QRS
-================================ */
+/* ===== ADMIN ===== */
 app.post("/admin/create-product", async (req, res) => {
-  if (req.headers["x-admin-token"] !== process.env.ADMIN_TOKEN) {
+  if (req.headers["x-admin-token"] !== process.env.ADMIN_TOKEN)
     return res.status(401).json({ error: "No autorizado" });
-  }
 
   const { name, value, units } = req.body;
-  const productId = "prod_" + uuidv4();
+  const pid = "prod_" + uuidv4();
 
   const products = JSON.parse(fs.readFileSync("products.json"));
-  products[productId] = { name, value, units };
+  products[pid] = { name, value, units };
   fs.writeFileSync("products.json", JSON.stringify(products, null, 2));
 
   const qrs = JSON.parse(fs.readFileSync("qrs.json"));
   const created = [];
 
   for (let i = 0; i < units; i++) {
-    const qrId = "qr_" + uuidv4();
-    qrs[qrId] = { productId, used: false };
+    const qid = "qr_" + uuidv4();
+    qrs[qid] = { productId: pid, used: false };
 
-    const url = `${BASE_URL}/r/${qrId}`;
-    const file = `qrs/${qrId}.png`;
-    await QRCode.toFile(file, url, { width: 500, margin: 2 });
+    const url = `${BASE_URL}/r/${qid}`;
+    const file = `qrs/${qid}.png`;
+    await QRCode.toFile(file, url);
 
-    create
+    created.push({ qid, qr: `${BASE_URL}/${file}` });
+  }
+
+  fs.writeFileSync("qrs.json", JSON.stringify(qrs, null, 2));
+  res.json({ pid, created });
+});
+
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => console.log("Servidor OK en puerto " + PORT));
