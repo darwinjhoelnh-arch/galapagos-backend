@@ -162,11 +162,18 @@ app.get("/r/:qrId", async (req, res) => {
       WHERE q.id = $1
     `, [qrId]);
 
-    if (qr.rowCount === 0) return res.send("QR inválido");
-    if (qr.rows[0].claimed) return res.send("QR ya reclamado");
+    if (qr.rowCount === 0) {
+      return res.send("QR inválido");
+    }
 
+    if (qr.rows[0].claimed) {
+      return res.send("Este QR ya fue reclamado");
+    }
+
+    // 1% del producto
     const rewardUSD = Number(qr.rows[0].price_usd) * 0.01;
 
+    // Precio real del token (DexScreener)
     const priceRes = await fetch(
       `https://api.dexscreener.com/latest/dex/tokens/${process.env.TOKEN_MINT}`
     );
@@ -181,18 +188,81 @@ app.get("/r/:qrId", async (req, res) => {
       `&amount=${tokens}` +
       `&network=mainnet-beta`;
 
+    // HTML FINAL
     res.send(`
-      <script>
-        window.CLAIM_DATA = ${JSON.stringify({
-          product: qr.rows[0].name,
-          price: qr.rows[0].price_usd,
-          tokens,
-          phantom
-        })}
-      </script>
-      ${require("fs").readFileSync("public/claim.html", "utf8")}
-    `);
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Reclamar Galápagos</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{
+  margin:0;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-family:Arial,Helvetica,sans-serif;
+  background:
+    radial-gradient(circle at top,#0f3d2e,transparent 50%),
+    linear-gradient(180deg,#020d0a,#000);
+  color:#eafff7;
+}
+.card{
+  background:rgba(5,30,22,.95);
+  border-radius:24px;
+  padding:32px 26px;
+  max-width:420px;
+  width:90%;
+  text-align:center;
+  border:1px solid rgba(0,255,156,.25);
+  box-shadow:0 0 40px rgba(0,255,156,.15);
+}
+h1{color:#00ff9c;margin-top:0}
+.stat{
+  background:#001a14;
+  border-radius:14px;
+  padding:12px;
+  margin:12px 0;
+}
+.stat span{color:#00ff9c;font-weight:bold}
+button{
+  margin-top:20px;
+  width:100%;
+  padding:16px;
+  border:none;
+  border-radius:18px;
+  font-size:16px;
+  font-weight:bold;
+  cursor:pointer;
+  background:linear-gradient(135deg,#00ff9c,#00c977);
+}
+small{opacity:.6}
+</style>
+</head>
 
+<body>
+<div class="card">
+  <h1>🌱 Galápagos Token</h1>
+  <p>Recompensa por producto auténtico</p>
+
+  <div class="stat">Producto: <span>${qr.rows[0].name}</span></div>
+  <div class="stat">Valor producto: <span>$${qr.rows[0].price_usd}</span></div>
+  <div class="stat">Recompensa: <span>1%</span></div>
+  <div class="stat">Tokens a recibir: <span>${tokens.toFixed(4)} GALÁPAGOS</span></div>
+
+  <button onclick="location.href='${phantom}'">
+    Reclamar con Phantom
+  </button>
+
+  <small>QR válido solo una vez · Solana Mainnet</small>
+</div>
+</body>
+</html>
+`);
+
+    // Marcar QR como usado
     await pool.query(
       "UPDATE qrs SET claimed = true WHERE id = $1",
       [qrId]
