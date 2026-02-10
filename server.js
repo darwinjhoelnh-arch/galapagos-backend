@@ -1,3 +1,5 @@
+console.log("🔥 SERVER VERSION 2026-02-10 v3 — NO USED COLUMN 🔥");
+
 import express from "express";
 import cors from "cors";
 import pkg from "pg";
