@@ -83,20 +83,34 @@ async function load(){
 }
 
 async function create(){
-  await fetch("/admin/create-product",{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "Authorization":"Bearer "+TOKEN
+  const body = {
+    name: document.getElementById("name").value.trim(),
+    value: Number(document.getElementById("value").value),
+    units: Number(document.getElementById("units").value)
+  };
+
+  console.log("BODY ENVIADO:", body);
+
+  const r = await fetch("/admin/create-product", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + TOKEN
     },
-    body:JSON.stringify({
-      name:name.value,
-      value:value.value,
-      units:units.value
-    })
+    body: JSON.stringify(body)
   });
-  load();
+
+  const j = await r.json();
+  console.log("RESPUESTA:", j);
+
+  if (!r.ok) {
+    alert("Error: " + JSON.stringify(j));
+    return;
+  }
+
+  load(); // recargar productos
 }
+
 
 load();
 </script>
