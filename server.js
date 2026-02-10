@@ -23,9 +23,8 @@ const pool = new Pool({
 const BASE_URL = "https://galapagos-backend-1.onrender.com";
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 
-/* ================= ADMIN ================= */
+/* ========== ADMIN ========== */
 
-/* LISTAR PRODUCTOS */
 app.get("/admin/products", async (req, res) => {
   const { rows } = await pool.query(`
     SELECT 
@@ -42,7 +41,6 @@ app.get("/admin/products", async (req, res) => {
   res.json(rows);
 });
 
-/* CREAR PRODUCTO */
 app.post("/admin/create-product", async (req, res) => {
   if (req.headers.authorization !== `Bearer ${ADMIN_TOKEN}`) {
     return res.status(401).json({ error: "Unauthorized" });
@@ -52,7 +50,7 @@ app.post("/admin/create-product", async (req, res) => {
   const price = Number(req.body.value);
   const units = Number(req.body.units);
 
-  if (!name || !price || !units) {
+  if (!name || !price || !units || units <= 0) {
     return res.status(400).json({ error: "Invalid input", body: req.body });
   }
 
@@ -63,8 +61,6 @@ app.post("/admin/create-product", async (req, res) => {
      VALUES ($1,$2,$3,$4,NOW())`,
     [productId, name, price, units]
   );
-
-  const qrs = [];
 
   for (let i = 0; i < units; i++) {
     const qrId = uuidv4();
@@ -79,21 +75,17 @@ app.post("/admin/create-product", async (req, res) => {
       `public/qrs/${qrId}.png`,
       `${BASE_URL}/r/${qrId}`
     );
-
-    qrs.push(qrId);
   }
 
-  res.json({ success: true, productId, qrs });
+  res.json({ success: true });
 });
 
-/* ================= QR ================= */
+/* ========== QR / CLAIM ========== */
 
-/* ABRIR QR */
 app.get("/r/:id", (req, res) => {
   res.sendFile(path.join(__dirname, "public/claim.html"));
 });
 
-/* DATA QR */
 app.get("/api/qr/:id", async (req, res) => {
   const { rows } = await pool.query(`
     SELECT 
@@ -110,7 +102,6 @@ app.get("/api/qr/:id", async (req, res) => {
   res.json(rows[0]);
 });
 
-/* RECLAMAR */
 app.post("/api/qr/:id/claim", async (req, res) => {
   const r = await pool.query(
     "SELECT claimed FROM qrs WHERE id=$1",
@@ -129,5 +120,5 @@ app.post("/api/qr/:id/claim", async (req, res) => {
 });
 
 app.listen(process.env.PORT || 10000, () =>
-  console.log("🚀 Backend listo")
+  console.log("🚀 Backend listo y estable")
 );

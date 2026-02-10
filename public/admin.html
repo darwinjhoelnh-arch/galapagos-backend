@@ -1,39 +1,85 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Admin Galápagos</title>
+<title>Galápagos Admin</title>
 <style>
-body{background:#020d08;color:#00ff9c;font-family:sans-serif}
-input,button{padding:10px;margin:5px}
-.card{border:1px solid #00ff9c;padding:10px;margin:10px}
+body{
+  margin:0;
+  font-family:system-ui;
+  background:radial-gradient(circle at top,#041b14,#000);
+  color:#7cffd1;
+}
+header{
+  padding:20px;
+  text-align:center;
+  font-size:24px;
+  letter-spacing:2px;
+}
+.panel{
+  max-width:1000px;
+  margin:auto;
+  padding:20px;
+}
+.card{
+  background:rgba(0,40,30,.6);
+  border-radius:20px;
+  padding:20px;
+  margin-bottom:20px;
+  box-shadow:0 0 40px rgba(0,255,180,.15);
+}
+input,button{
+  padding:12px;
+  border:none;
+  border-radius:12px;
+  margin:5px;
+}
+input{width:200px}
+button{
+  background:linear-gradient(90deg,#00ffb2,#00cc88);
+  font-weight:bold;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
+  gap:20px;
+}
+.stat{
+  font-size:14px;
+  opacity:.8;
+}
 </style>
 </head>
 <body>
 
-<h2>Admin Galápagos</h2>
+<header>🌱 GALÁPAGOS · ADMIN</header>
 
-<input id="name" placeholder="Producto">
-<input id="value" placeholder="Precio USD">
-<input id="units" placeholder="Cantidad">
-<button onclick="create()">Crear</button>
+<div class="panel">
+  <div class="card">
+    <h3>Crear producto</h3>
+    <input id="name" placeholder="Nombre">
+    <input id="value" placeholder="Precio USD">
+    <input id="units" placeholder="Cantidad">
+    <button onclick="create()">Crear</button>
+  </div>
 
-<div id="products"></div>
+  <div class="grid" id="products"></div>
+</div>
 
 <script>
-const TOKEN = prompt("Admin token");
+const TOKEN = prompt("ADMIN TOKEN");
 
 async function load(){
   const r = await fetch("/admin/products");
-  const d = await r.json();
-  document.getElementById("products").innerHTML =
-    d.map(p=>`
-      <div class="card">
-        <b>${p.name}</b><br>
-        Precio: $${p.price_usd}<br>
-        QRs: ${p.claimed}/${p.units}
-      </div>
-    `).join("");
+  const data = await r.json();
+
+  products.innerHTML = data.map(p=>`
+    <div class="card">
+      <h4>${p.name}</h4>
+      <div class="stat">Precio: $${p.price_usd}</div>
+      <div class="stat">QRs: ${p.claimed}/${p.units}</div>
+    </div>
+  `).join("");
 }
 
 async function create(){
@@ -44,9 +90,9 @@ async function create(){
       "Authorization":"Bearer "+TOKEN
     },
     body:JSON.stringify({
-      name: name.value,
-      value: value.value,
-      units: units.value
+      name:name.value,
+      value:value.value,
+      units:units.value
     })
   });
   load();
