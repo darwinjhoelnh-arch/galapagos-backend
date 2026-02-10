@@ -1,20 +1,23 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Reclamar</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reclamar Galápagos</title>
 </head>
 <body style="background:#0b1f1a;color:#eafff7;text-align:center;padding-top:60px;font-family:Arial">
 
 <h2>🌱 Galápagos Token</h2>
-<p>Firma para reclamar</p>
+<p>Firma para reclamar tu recompensa</p>
+
 <button onclick="claim()">Firmar con Phantom</button>
+
+<pre id="out"></pre>
 
 <script>
 async function claim() {
   if (!window.solana || !window.solana.isPhantom) {
-    alert("Abre esto dentro de Phantom Wallet");
+    alert("Abre este enlace dentro de Phantom Wallet");
     return;
   }
 
@@ -33,8 +36,10 @@ async function claim() {
   });
 
   const data = await res.json();
-  alert(data.success ? "✅ Reclamo exitoso" : data.error);
+  document.getElementById("out").textContent =
+    JSON.stringify(data, null, 2);
 }
 </script>
+
 </body>
 </html>
