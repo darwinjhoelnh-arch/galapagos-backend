@@ -1,58 +1,71 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
 <meta charset="UTF-8">
 <title>Galápagos Admin</title>
 <style>
 body {
   background: radial-gradient(circle at top, #0f3d2e, #000);
-  color:#e8fff3;
-  font-family: 'Segoe UI', sans-serif;
+  color: #e8fff3;
+  font-family: Arial, sans-serif;
 }
 .card {
   background: rgba(0,40,30,0.9);
-  border-radius:20px;
-  padding:20px;
-  margin:20px;
+  padding: 20px;
+  border-radius: 16px;
+  max-width: 420px;
+  margin: 40px auto;
   box-shadow: 0 0 30px rgba(0,255,170,0.2);
+}
+input, button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 10px;
+  border: none;
 }
 button {
   background: linear-gradient(135deg,#00ff9c,#00c977);
-  border:none;
-  border-radius:12px;
-  padding:12px;
-  cursor:pointer;
+  cursor: pointer;
+}
+pre {
+  margin-top: 20px;
+  white-space: pre-wrap;
 }
 </style>
 </head>
 <body>
 
-<h1>🌱 Galápagos Admin</h1>
-
 <div class="card">
-  <h2>Crear producto</h2>
-  <input id="n" placeholder="Nombre"><br><br>
-  <input id="v" placeholder="Valor USD"><br><br>
-  <input id="u" placeholder="Unidades"><br><br>
-  <input id="t" placeholder="Admin token"><br><br>
-  <button onclick="create()">Crear</button>
-</div>
+  <h2>🌱 Crear Producto</h2>
 
-<pre id="out"></pre>
+  <input id="name" placeholder="Nombre del producto">
+  <input id="value" placeholder="Precio USD" type="number">
+  <input id="units" placeholder="Unidades / QRs" type="number">
+  <input id="token" placeholder="Admin token" type="password">
+
+  <button onclick="create()">Crear</button>
+
+  <pre id="out"></pre>
+</div>
 
 <script>
 async function create() {
-  const r = await fetch("/admin/create-product", {
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "x-admin-token":t.value
+  const res = await fetch("/admin/create-product", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-admin-token": token.value
     },
-    body:JSON.stringify({
-      name:n.value,value:Number(v.value),units:Number(u.value)
+    body: JSON.stringify({
+      name: name.value,
+      value: Number(value.value),
+      units: Number(units.value)
     })
   });
-  out.textContent = JSON.stringify(await r.json(),null,2);
+
+  const data = await res.json();
+  out.textContent = JSON.stringify(data, null, 2);
 }
 </script>
 
