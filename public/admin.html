@@ -2,250 +2,110 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Galápagos Admin Panel</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<title>Galápagos Admin</title>
 <style>
-:root {
-  --neon: #00ff9c;
-  --neon-soft: rgba(0,255,156,0.2);
-  --bg-dark: #020d0a;
-  --card: rgba(8,40,30,0.85);
-}
-
-* { box-sizing: border-box; }
-
 body {
-  margin: 0;
-  min-height: 100vh;
-  font-family: "Segoe UI", system-ui, sans-serif;
-  background:
-    radial-gradient(circle at 20% 20%, #0f3d2e, transparent 40%),
-    radial-gradient(circle at 80% 10%, #003d2a, transparent 45%),
-    linear-gradient(180deg, #000, #020d0a 40%);
+  background: radial-gradient(circle at top, #0f3d2e, #000);
   color: #eafff7;
+  font-family: Arial;
+  padding: 40px;
 }
-
-/* ===== LAYOUT ===== */
-.container {
-  max-width: 1200px;
-  margin: auto;
-  padding: 40px 20px;
-}
-
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 40px;
-}
-
-header h1 {
-  font-size: 26px;
-  letter-spacing: 1px;
-}
-
-header span {
-  color: var(--neon);
-}
-
-/* ===== STATS ===== */
-.stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
-  gap: 20px;
-  margin-bottom: 40px;
-}
-
-.stat {
-  background: linear-gradient(180deg, rgba(0,255,156,0.08), transparent);
-  border: 1px solid rgba(0,255,156,0.15);
-  border-radius: 18px;
-  padding: 22px;
-  box-shadow: 0 0 40px rgba(0,255,156,0.08);
-}
-
-.stat h3 {
-  margin: 0;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  opacity: 0.7;
-}
-
-.stat p {
-  font-size: 30px;
-  margin: 10px 0 0;
-  color: var(--neon);
-}
-
-/* ===== GRID ===== */
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 30px;
-}
-
-.card {
-  background: var(--card);
-  border-radius: 22px;
-  padding: 28px;
-  border: 1px solid rgba(0,255,156,0.18);
-  box-shadow: 0 0 60px rgba(0,255,156,0.1);
-  backdrop-filter: blur(10px);
-}
-
-.card h2 {
-  margin-top: 0;
-  margin-bottom: 20px;
-}
-
-/* ===== FORM ===== */
-input, button {
+h1 { color: #00ff9c; }
+table {
   width: 100%;
-  padding: 14px;
-  border-radius: 14px;
-  border: none;
-  outline: none;
-  font-size: 15px;
+  border-collapse: collapse;
 }
-
-input {
-  background: #001a14;
-  color: #eafff7;
-  margin-bottom: 12px;
+th, td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
 }
-
+tr:hover { background: rgba(0,255,156,0.05); }
 button {
-  background: linear-gradient(135deg, var(--neon), #00c977);
-  color: #003322;
-  font-weight: bold;
-  cursor: pointer;
-  margin-top: 10px;
+  padding: 6px 10px;
+  margin-right: 5px;
 }
-
-button:hover {
-  filter: brightness(1.1);
-}
-
-/* ===== OUTPUT ===== */
-pre {
-  margin-top: 20px;
-  background: #00140f;
-  border-radius: 14px;
-  padding: 14px;
-  max-height: 280px;
-  overflow: auto;
-  font-size: 13px;
-}
-
-/* ===== FOOTER ===== */
-footer {
-  margin-top: 60px;
-  text-align: center;
-  opacity: 0.4;
-  font-size: 13px;
-}
+.badge-ok { color:#00ff9c }
+.badge-used { color:#ff4d4d }
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<h1>🌱 Galápagos Admin</h1>
 
-  <header>
-    <h1>🌱 Galápagos <span>Admin</span></h1>
-    <div>Network: <span>Mainnet</span></div>
-  </header>
+<h2>Crear Producto</h2>
+<input id="productName" placeholder="Nombre"><br>
+<input id="price" type="number" placeholder="Precio USD"><br>
+<input id="units" type="number" placeholder="Unidades"><br>
+<input id="adminToken" type="password" placeholder="Admin token"><br>
+<button onclick="create()">Crear</button>
 
-  <!-- ===== STATS (SE PUEDEN CONECTAR AL BACKEND) ===== -->
-  <section class="stats">
-    <div class="stat">
-      <h3>Productos</h3>
-      <p id="statProducts">—</p>
-    </div>
-    <div class="stat">
-      <h3>QRs Generados</h3>
-      <p id="statQRs">—</p>
-    </div>
-    <div class="stat">
-      <h3>QRs Reclamados</h3>
-      <p id="statClaims">—</p>
-    </div>
-    <div class="stat">
-      <h3>Tokens Entregados</h3>
-      <p id="statTokens">—</p>
-    </div>
-  </section>
+<h2>Productos</h2>
+<table>
+<thead>
+<tr><th>Nombre</th><th>Precio</th><th>QRs</th><th>Reclamados</th><th>Acciones</th></tr>
+</thead>
+<tbody id="products"></tbody>
+</table>
 
-  <!-- ===== MAIN GRID ===== -->
-  <section class="grid">
-
-    <!-- CREATE PRODUCT -->
-    <div class="card">
-      <h2>➕ Crear Producto</h2>
-
-      <input id="productName" placeholder="Nombre del producto">
-      <input id="price" type="number" placeholder="Precio USD">
-      <input id="units" type="number" placeholder="Cantidad de QRs">
-      <input id="adminToken" type="password" placeholder="Admin token">
-
-      <button onclick="createProduct()">Crear producto</button>
-
-      <pre id="output"></pre>
-    </div>
-
-    <!-- INFO -->
-    <div class="card">
-      <h2>📊 Sistema</h2>
-      <p>• 1 QR = 1 unidad</p>
-      <p>• Cada QR es único</p>
-      <p>• QR usado no puede volver a reclamar</p>
-      <p>• Recompensa = <b>1% del valor del producto</b></p>
-      <p>• Pago en <b>GALÁPAGOS Token</b></p>
-      <p style="opacity:.6;margin-top:20px">
-        Panel diseñado para uso interno.  
-        Estilo futurista / blockchain-grade.
-      </p>
-    </div>
-
-  </section>
-
-  <footer>
-    Galápagos Protocol © 2026
-  </footer>
-
-</div>
+<h2 id="qrTitle"></h2>
+<ul id="qrList"></ul>
 
 <script>
-async function createProduct() {
-  const payload = {
-    name: document.getElementById("productName").value,
-    value: Number(document.getElementById("price").value),
-    units: Number(document.getElementById("units").value)
-  };
-
-  const token = document.getElementById("adminToken").value;
-
-  const res = await fetch("/admin/create-product", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-admin-token": token
+async function create() {
+  await fetch("/admin/create-product", {
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "x-admin-token":adminToken.value
     },
-    body: JSON.stringify(payload)
+    body:JSON.stringify({
+      name:productName.value,
+      value:Number(price.value),
+      units:Number(units.value)
+    })
   });
-
-  const data = await res.json();
-  document.getElementById("output").textContent =
-    JSON.stringify(data, null, 2);
-
-  // stats visuales rápidos
-  if (data.success) {
-    document.getElementById("statProducts").textContent = "↑";
-    document.getElementById("statQRs").textContent = data.units;
-  }
+  load();
 }
+
+async function load() {
+  const r = await fetch("/admin/products");
+  const products = await r.json();
+  productsEl.innerHTML = "";
+  products.forEach(p=>{
+    productsEl.innerHTML += `
+      <tr>
+        <td>${p.name}</td>
+        <td>$${p.price_usd}</td>
+        <td>${p.total_qrs}</td>
+        <td>${p.claimed_qrs}</td>
+        <td>
+          <button onclick="view('${p.id}','${p.name}')">Ver</button>
+          <button onclick="zip('${p.id}')">ZIP</button>
+          <button onclick="zip('${p.id}',true)">ZIP nuevos</button>
+        </td>
+      </tr>`;
+  });
+}
+
+async function view(id,name) {
+  const r = await fetch(`/admin/products/${id}/qrs`);
+  const qrs = await r.json();
+  qrTitle.textContent = `QRs de ${name}`;
+  qrList.innerHTML = "";
+  qrs.forEach(q=>{
+    qrList.innerHTML += `<li>${q.id} ${
+      q.claimed ? "<span class='badge-used'>reclamado</span>"
+                : "<span class='badge-ok'>disponible</span>"
+    }</li>`;
+  });
+}
+
+function zip(id,only=false){
+  window.open(`/admin/products/${id}/qrs.zip${only?"?only=new":""}`);
+}
+
+load();
 </script>
 
 </body>
