@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Reclamar Galápagos</title>
+
+<style>
+body{
+  margin:0;
+  background:radial-gradient(circle at top,#0c3b2e,#020d08);
+  color:#dfffe8;
+  font-family:system-ui;
+}
+.card{
+  max-width:380px;
+  margin:80px auto;
+  padding:30px;
+  border-radius:20px;
+  background:rgba(0,40,30,.6);
+  box-shadow:0 0 40px rgba(0,255,160,.15);
+  text-align:center;
+}
+h1{color:#2bff9b}
+.btn{
+  margin-top:20px;
+  padding:16px;
+  width:100%;
+  border:none;
+  border-radius:14px;
+  background:linear-gradient(90deg,#00ff99,#00cc66);
+  font-size:16px;
+  font-weight:bold;
+}
+small{opacity:.7}
+</style>
+</head>
+
+<body>
+<div class="card">
+  <h1>🌱 Galápagos Token</h1>
+  <p>Recompensa por producto auténtico</p>
+
+  <p><b>Producto:</b> <span id="product">—</span></p>
+  <p><b>Valor producto:</b> $<span id="price">—</span></p>
+  <p><b>Recompensa:</b> 1%</p>
+  <p><b>Tokens a recibir:</b> <span id="tokens">—</span></p>
+
+  <button class="btn" id="claim">Reclamar con Phantom</button>
+  <small>QR válido una sola vez · Solana Mainnet</small>
+</div>
+
+<script>
+const qrId = location.pathname.split("/").pop();
+
+fetch(`/api/qr/${qrId}`)
+  .then(r => r.json())
+  .then(d => {
+    if(d.used){
+      alert("❌ QR ya reclamado");
+      document.getElementById("claim").disabled = true;
+      return;
+    }
+    document.getElementById("product").innerText = d.product;
+    document.getElementById("price").innerText = d.price_usd;
+    document.getElementById("tokens").innerText = d.tokens.toFixed(4);
+  });
+
+document.getElementById("claim").onclick = async () => {
+  const r = await fetch(`/api/claim/${qrId}`, { method:"POST" });
+  const j = await r.json();
+
+  if(j.success){
+    alert("✅ Recompensa reclamada");
+    location.reload();
+  }else{
+    alert(j.error);
+  }
+};
+</script>
+</body>
+</html>
