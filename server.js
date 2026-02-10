@@ -162,18 +162,11 @@ app.get("/r/:qrId", async (req, res) => {
       WHERE q.id = $1
     `, [qrId]);
 
-    if (qr.rowCount === 0) {
-      return res.send("QR inválido");
-    }
+    if (qr.rowCount === 0) return res.send("QR inválido");
+    if (qr.rows[0].claimed) return res.send("QR ya reclamado");
 
-    if (qr.rows[0].claimed) {
-      return res.send("Este QR ya fue reclamado");
-    }
-
-    // 1%
     const rewardUSD = Number(qr.rows[0].price_usd) * 0.01;
 
-    // Precio real del token
     const priceRes = await fetch(
       `https://api.dexscreener.com/latest/dex/tokens/${process.env.TOKEN_MINT}`
     );
@@ -188,22 +181,18 @@ app.get("/r/:qrId", async (req, res) => {
       `&amount=${tokens}` +
       `&network=mainnet-beta`;
 
-    // Inyectar datos en HTML
-    const html = `
+    res.send(`
       <script>
-      window.__CLAIM_DATA__ = ${JSON.stringify({
-        product: qr.rows[0].name,
-        price: qr.rows[0].price_usd,
-        tokens,
-        phantom
-      })}
+        window.CLAIM_DATA = ${JSON.stringify({
+          product: qr.rows[0].name,
+          price: qr.rows[0].price_usd,
+          tokens,
+          phantom
+        })}
       </script>
-      <script src="/claim.html"></script>
-    `;
+      ${require("fs").readFileSync("public/claim.html", "utf8")}
+    `);
 
-    res.send(html);
-
-    // Marcar usado
     await pool.query(
       "UPDATE qrs SET claimed = true WHERE id = $1",
       [qrId]

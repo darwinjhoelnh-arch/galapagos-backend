@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <title>Reclamar Galápagos</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <style>
 body{
   margin:0;
@@ -28,21 +27,14 @@ body{
   border:1px solid rgba(0,255,156,.25);
   box-shadow:0 0 40px rgba(0,255,156,.15);
 }
-h1{
-  margin-top:0;
-  color:#00ff9c;
-}
+h1{color:#00ff9c;margin-top:0}
 .stat{
   background:#001a14;
   border-radius:14px;
   padding:12px;
   margin:12px 0;
-  font-size:15px;
 }
-.stat span{
-  color:#00ff9c;
-  font-weight:bold;
-}
+.stat span{color:#00ff9c;font-weight:bold}
 button{
   margin-top:20px;
   width:100%;
@@ -54,31 +46,26 @@ button{
   cursor:pointer;
   background:linear-gradient(135deg,#00ff9c,#00c977);
 }
-small{
-  display:block;
-  opacity:.6;
-  margin-top:12px;
-}
+small{opacity:.6}
 </style>
 </head>
 
 <body>
-
 <div class="card">
   <h1>🌱 Galápagos Token</h1>
   <p>Recompensa por producto auténtico</p>
 
-  <div class="stat">Producto: <span id="product">—</span></div>
-  <div class="stat">Valor producto: <span id="price">—</span></div>
+  <div class="stat">Producto: <span id="product"></span></div>
+  <div class="stat">Valor producto: <span id="price"></span></div>
   <div class="stat">Recompensa: <span>1%</span></div>
-  <div class="stat">Tokens a recibir: <span id="tokens">—</span></div>
+  <div class="stat">Tokens a recibir: <span id="tokens"></span></div>
 
   <button id="btn">Reclamar con Phantom</button>
-  <small>QR válido solo una vez · Red Solana Mainnet</small>
+  <small>QR válido solo una vez · Solana Mainnet</small>
 </div>
 
 <script>
-const data = window.__CLAIM_DATA__;
+const data = window.CLAIM_DATA;
 
 document.getElementById("product").textContent = data.product;
 document.getElementById("price").textContent = "$" + data.price;
@@ -89,6 +76,5 @@ document.getElementById("btn").onclick = () => {
   window.location.href = data.phantom;
 };
 </script>
-
 </body>
 </html>
