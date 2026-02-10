@@ -1,212 +1,58 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>Galápagos Admin</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<title>Admin Galápagos</title>
 <style>
-:root {
-  --neon:#00ff9c;
-  --bg1:#020d0a;
-  --card:rgba(8,40,30,.9);
-}
-*{box-sizing:border-box}
-body{
-  margin:0;
-  min-height:100vh;
-  font-family:Arial,sans-serif;
-  background:
-    radial-gradient(circle at 20% 20%,#0f3d2e,transparent 40%),
-    radial-gradient(circle at 80% 10%,#003d2a,transparent 45%),
-    linear-gradient(180deg,#000,#020d0a 40%);
-  color:#eafff7;
-}
-.container{max-width:1200px;margin:auto;padding:40px 20px}
-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:40px}
-header h1 span{color:var(--neon)}
-
-.stats{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-  gap:20px;margin-bottom:40px
-}
-.stat{
-  background:linear-gradient(180deg,rgba(0,255,156,.1),transparent);
-  border-radius:18px;
-  padding:22px;
-  border:1px solid rgba(0,255,156,.15)
-}
-.stat h3{margin:0;font-size:13px;opacity:.7}
-.stat p{font-size:28px;color:var(--neon);margin-top:8px}
-
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:30px}
-
-.card{
-  background:var(--card);
-  border-radius:22px;
-  padding:28px;
-  border:1px solid rgba(0,255,156,.18)
-}
-
-input,button{
-  width:100%;
-  padding:14px;
-  border-radius:14px;
-  border:none;
-  font-size:15px;
-  margin-bottom:10px
-}
-input{background:#001a14;color:#eafff7}
-button{
-  background:linear-gradient(135deg,var(--neon),#00c977);
-  font-weight:bold;cursor:pointer
-}
-
-table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:20px;
-}
-th,td{
-  padding:10px;
-  border-bottom:1px solid rgba(255,255,255,.1);
-  font-size:14px
-}
-tr:hover{background:rgba(0,255,156,.05)}
-.badge-ok{color:#00ff9c}
-.badge-used{color:#ff4d4d}
-
-.qrlist{
-  max-height:260px;
-  overflow:auto;
-  margin-top:10px;
-  font-size:13px
-}
+body{background:#020d08;color:#00ff9c;font-family:sans-serif}
+input,button{padding:10px;margin:5px}
+.card{border:1px solid #00ff9c;padding:10px;margin:10px}
 </style>
 </head>
-
 <body>
-<div class="container">
 
-<header>
-  <h1>🌱 Galápagos <span>Admin</span></h1>
-  <div>Network: <span style="color:var(--neon)">Mainnet</span></div>
-</header>
+<h2>Admin Galápagos</h2>
 
-<!-- STATS -->
-<section class="stats">
-  <div class="stat"><h3>PRODUCTOS</h3><p id="statProducts">—</p></div>
-  <div class="stat"><h3>QRS GENERADOS</h3><p id="statQRs">—</p></div>
-  <div class="stat"><h3>QRS RECLAMADOS</h3><p id="statClaims">—</p></div>
-  <div class="stat"><h3>TOKENS ENTREGADOS</h3><p>—</p></div>
-</section>
+<input id="name" placeholder="Producto">
+<input id="value" placeholder="Precio USD">
+<input id="units" placeholder="Cantidad">
+<button onclick="create()">Crear</button>
 
-<section class="grid">
-
-<!-- CREATE PRODUCT -->
-<div class="card">
-<h2>➕ Crear Producto</h2>
-<input id="productName" placeholder="Nombre del producto">
-<input id="price" type="number" placeholder="Precio USD">
-<input id="units" type="number" placeholder="Cantidad de QRs">
-<input id="adminToken" type="password" placeholder="Admin token">
-<button onclick="createProduct()">Crear producto</button>
-</div>
-
-<!-- PRODUCTS -->
-<div class="card">
-<h2>📦 Productos</h2>
-
-<table>
-<thead>
-<tr>
-<th>Nombre</th>
-<th>Precio</th>
-<th>QRs</th>
-<th>Reclamados</th>
-<th>Acciones</th>
-</tr>
-</thead>
-<tbody id="products"></tbody>
-</table>
-
-<h3 id="qrTitle"></h3>
-<div id="qrList" class="qrlist"></div>
-</div>
-
-</section>
-</div>
+<div id="products"></div>
 
 <script>
-async function loadProducts(){
-  const res=await fetch("/admin/products");
-  const products=await res.json();
+const TOKEN = prompt("Admin token");
 
-  let totalQR=0,totalClaimed=0;
-  const tbody=document.getElementById("products");
-  tbody.innerHTML="";
-
-  products.forEach(p=>{
-    totalQR+=Number(p.total_qrs);
-    totalClaimed+=Number(p.claimed_qrs);
-
-    tbody.innerHTML+=`
-      <tr>
-        <td>${p.name}</td>
-        <td>$${p.price_usd}</td>
-        <td>${p.total_qrs}</td>
-        <td>${p.claimed_qrs}</td>
-        <td>
-          <button onclick="viewQRs('${p.id}','${p.name}')">Ver</button>
-          <button onclick="zip('${p.id}')">ZIP</button>
-          <button onclick="zip('${p.id}',true)">ZIP nuevos</button>
-        </td>
-      </tr>`;
-  });
-
-  document.getElementById("statProducts").textContent=products.length;
-  document.getElementById("statQRs").textContent=totalQR;
-  document.getElementById("statClaims").textContent=totalClaimed;
+async function load(){
+  const r = await fetch("/admin/products");
+  const d = await r.json();
+  document.getElementById("products").innerHTML =
+    d.map(p=>`
+      <div class="card">
+        <b>${p.name}</b><br>
+        Precio: $${p.price_usd}<br>
+        QRs: ${p.claimed}/${p.units}
+      </div>
+    `).join("");
 }
 
-async function viewQRs(id,name){
-  const res=await fetch(`/admin/products/${id}/qrs`);
-  const qrs=await res.json();
-  document.getElementById("qrTitle").textContent=`QRs de ${name}`;
-  const list=document.getElementById("qrList");
-  list.innerHTML="";
-  qrs.forEach(q=>{
-    list.innerHTML+=`${q.id} ${
-      q.claimed
-        ? "<span class='badge-used'>reclamado</span>"
-        : "<span class='badge-ok'>disponible</span>"
-    }<br>`;
-  });
-}
-
-function zip(id,only=false){
-  window.open(`/admin/products/${id}/qrs.zip${only?"?only=new":""}`);
-}
-
-async function createProduct(){
+async function create(){
   await fetch("/admin/create-product",{
     method:"POST",
     headers:{
       "Content-Type":"application/json",
-      "x-admin-token":adminToken.value
+      "Authorization":"Bearer "+TOKEN
     },
     body:JSON.stringify({
-      name:productName.value,
-      value:Number(price.value),
-      units:Number(units.value)
+      name: name.value,
+      value: value.value,
+      units: units.value
     })
   });
-  loadProducts();
+  load();
 }
 
-loadProducts();
+load();
 </script>
-
 </body>
 </html>
