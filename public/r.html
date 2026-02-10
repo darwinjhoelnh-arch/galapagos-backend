@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>Reclamar Galápagos</title>
+<style>
+body{
+  background:#031d17;
+  color:#aefde3;
+  font-family:Arial;
+}
+.card{
+  background:#052a22;
+  padding:20px;
+  border-radius:14px;
+  max-width:360px;
+  margin:40px auto;
+}
+button{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:10px;
+  background:#00ff9c;
+  font-weight:bold;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+<h2>🌱 Galápagos Token</h2>
+<p>Producto: <b id="p"></b></p>
+<p>Valor: $<b id="v"></b></p>
+<p>Recompensa: 1%</p>
+<p>Tokens a recibir: <b id="t"></b></p>
+<button onclick="claim()">Reclamar con Phantom</button>
+</div>
+
+<script>
+const id = location.pathname.split("/").pop();
+
+fetch(`/api/qr/${id}`)
+.then(r=>r.json())
+.then(d=>{
+  p.textContent = d.name;
+  v.textContent = d.price_usd;
+  t.textContent = (d.price_usd * 0.01).toFixed(4);
+});
+
+async function claim(){
+  await fetch(`/api/qr/${id}/claim`,{ method:"POST" });
+  alert("QR reclamado");
+}
+</script>
+
+</body>
+</html>
