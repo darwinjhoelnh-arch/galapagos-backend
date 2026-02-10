@@ -154,14 +154,9 @@ app.get("/claim/:id", (_, res) => {
 app.get("/r/:qrId", async (req, res) => {
   try {
     const { qrId } = req.params;
-    const { wallet } = req.query;
-
-    if (!wallet) {
-      return res.send("Wallet requerida");
-    }
 
     const qr = await pool.query(`
-      SELECT q.id, q.claimed, p.price_usd
+      SELECT q.id, q.claimed, p.name, p.price_usd
       FROM qrs q
       JOIN products p ON p.id = q.product_id
       WHERE q.id = $1
@@ -172,13 +167,13 @@ app.get("/r/:qrId", async (req, res) => {
     }
 
     if (qr.rows[0].claimed) {
-      return res.send("QR ya reclamado");
+      return res.send("Este QR ya fue reclamado");
     }
 
-    // 1% del valor
+    // 1%
     const rewardUSD = Number(qr.rows[0].price_usd) * 0.01;
 
-    // Precio del token (DINÁMICO)
+    // Precio real del token
     const priceRes = await fetch(
       `https://api.dexscreener.com/latest/dex/tokens/${process.env.TOKEN_MINT}`
     );
@@ -187,33 +182,39 @@ app.get("/r/:qrId", async (req, res) => {
 
     const tokens = rewardUSD / tokenPrice;
 
-    // Guardar claim
-    await pool.query(
-      "INSERT INTO claims (qr_id, wallet, tokens) VALUES ($1,$2,$3)",
-      [qrId, wallet, tokens]
-    );
+    const phantom =
+      `https://phantom.app/ul/v1/transfer` +
+      `?splToken=${process.env.TOKEN_MINT}` +
+      `&amount=${tokens}` +
+      `&network=mainnet-beta`;
 
-    // Marcar QR como usado
+    // Inyectar datos en HTML
+    const html = `
+      <script>
+      window.__CLAIM_DATA__ = ${JSON.stringify({
+        product: qr.rows[0].name,
+        price: qr.rows[0].price_usd,
+        tokens,
+        phantom
+      })}
+      </script>
+      <script src="/claim.html"></script>
+    `;
+
+    res.send(html);
+
+    // Marcar usado
     await pool.query(
       "UPDATE qrs SET claimed = true WHERE id = $1",
       [qrId]
     );
-
-    // Phantom deep link
-    const phantomLink =
-      `https://phantom.app/ul/v1/transfer` +
-      `?recipient=${wallet}` +
-      `&amount=${tokens}` +
-      `&splToken=${process.env.TOKEN_MINT}` +
-      `&network=mainnet-beta`;
-
-    res.redirect(phantomLink);
 
   } catch (err) {
     console.error(err);
     res.send("Error interno");
   }
 });
+
 
 app.listen(PORT, () => {
   console.log("Servidor corriendo en puerto", PORT);

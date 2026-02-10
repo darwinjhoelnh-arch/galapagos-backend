@@ -2,40 +2,92 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<title>Reclamar Galápagos</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Reclamar</title>
+
+<style>
+body{
+  margin:0;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-family:Arial,Helvetica,sans-serif;
+  background:
+    radial-gradient(circle at top,#0f3d2e,transparent 50%),
+    linear-gradient(180deg,#020d0a,#000);
+  color:#eafff7;
+}
+.card{
+  background:rgba(5,30,22,.95);
+  border-radius:24px;
+  padding:32px 26px;
+  max-width:420px;
+  width:90%;
+  text-align:center;
+  border:1px solid rgba(0,255,156,.25);
+  box-shadow:0 0 40px rgba(0,255,156,.15);
+}
+h1{
+  margin-top:0;
+  color:#00ff9c;
+}
+.stat{
+  background:#001a14;
+  border-radius:14px;
+  padding:12px;
+  margin:12px 0;
+  font-size:15px;
+}
+.stat span{
+  color:#00ff9c;
+  font-weight:bold;
+}
+button{
+  margin-top:20px;
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:16px;
+  font-size:16px;
+  font-weight:bold;
+  cursor:pointer;
+  background:linear-gradient(135deg,#00ff9c,#00c977);
+}
+small{
+  display:block;
+  opacity:.6;
+  margin-top:12px;
+}
+</style>
 </head>
-<body style="background:#0b1f1a;color:#eafff7;text-align:center;padding-top:60px;font-family:Arial">
 
-<h2>🌱 Galápagos Token</h2>
-<p>Firma para reclamar tu recompensa</p>
-<button onclick="claim()">Firmar con Phantom</button>
+<body>
 
-<pre id="out"></pre>
+<div class="card">
+  <h1>🌱 Galápagos Token</h1>
+  <p>Recompensa por producto auténtico</p>
+
+  <div class="stat">Producto: <span id="product">—</span></div>
+  <div class="stat">Valor producto: <span id="price">—</span></div>
+  <div class="stat">Recompensa: <span>1%</span></div>
+  <div class="stat">Tokens a recibir: <span id="tokens">—</span></div>
+
+  <button id="btn">Reclamar con Phantom</button>
+  <small>QR válido solo una vez · Red Solana Mainnet</small>
+</div>
 
 <script>
-async function claim() {
-  if (!window.solana || !window.solana.isPhantom) {
-    alert("Abre este enlace dentro de Phantom Wallet");
-    return;
-  }
+const data = window.__CLAIM_DATA__;
 
-  await window.solana.connect();
-  const msg = new TextEncoder().encode("Reclamo Galápagos Token");
-  const signed = await window.solana.signMessage(msg, "utf8");
+document.getElementById("product").textContent = data.product;
+document.getElementById("price").textContent = "$" + data.price;
+document.getElementById("tokens").textContent =
+  data.tokens.toFixed(4) + " GALÁPAGOS";
 
-  const res = await fetch(window.location.pathname + "/sign", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      publicKey: window.solana.publicKey.toString(),
-      signature: Array.from(signed.signature)
-    })
-  });
-
-  document.getElementById("out").textContent =
-    JSON.stringify(await res.json(), null, 2);
-}
+document.getElementById("btn").onclick = () => {
+  window.location.href = data.phantom;
+};
 </script>
 
 </body>
