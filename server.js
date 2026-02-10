@@ -123,27 +123,28 @@ app.post("/admin/create-product", async (req, res) => {
   if (req.headers["x-admin-token"] !== process.env.ADMIN_TOKEN)
     return res.status(401).json({ error: "Unauthorized" });
 
-  const { name, value, units } = req.body;
-  const productId = uuidv4();
+const { name, value, units } = req.body;
+const productId = uuidv4();
 
 await pool.query(
-  "INSERT INTO products (id, name, value_usd, units) VALUES ($1,$2,$3,$4)",
+  "INSERT INTO products (id, name, price_usd, units) VALUES ($1,$2,$3,$4)",
   [productId, name, value, units]
 );
 
-  const qrs = [];
-  for (let i = 0; i < units; i++) {
-    const qrId = uuidv4();
-    await pool.query(
-      "INSERT INTO qrs(id,product_id) VALUES ($1,$2)",
-      [qrId, productId]
-    );
-    await QRCode.toFile(
-      `public/qrs/${qrId}.png`,
-      `${BASE_URL}/r/${qrId}`
-    );
-    qrs.push(qrId);
-  }
+const qrs = [];
+for (let i = 0; i < units; i++) {
+  const qrId = uuidv4();
+  await pool.query(
+    "INSERT INTO qrs (id, product_id) VALUES ($1,$2)",
+    [qrId, productId]
+  );
+  await QRCode.toFile(
+    `public/qrs/${qrId}.png`,
+    `${BASE_URL}/r/${qrId}`
+  );
+  qrs.push(qrId);
+}
+
 
   res.json({ productId, qrs });
 });
