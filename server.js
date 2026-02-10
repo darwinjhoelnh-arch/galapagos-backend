@@ -15,6 +15,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
+app.use("/qrs", express.static("public/qrs"));
 
 const __dirname = path.resolve();
 const BASE_URL = process.env.BASE_URL;
@@ -47,7 +48,12 @@ async function initDB() {
     );
   `);
 }
-initDB();
+initDB().then(() => {
+  console.log("DB inicializada correctamente");
+}).catch(err => {
+  console.error("Error inicializando DB", err);
+});
+
 
 /* ============ PRECIO REAL DEX ============ */
 async function getTokenPriceUSD() {
